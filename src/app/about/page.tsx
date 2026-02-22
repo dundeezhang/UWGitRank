@@ -1,85 +1,263 @@
 import Link from "next/link";
-import { ArrowLeft, Star, GitCommit, GitPullRequest, Award } from "lucide-react";
+import {
+  ArrowLeft,
+  Star,
+  GitCommit,
+  GitPullRequest,
+  Award,
+  Trophy,
+  Calculator,
+  RefreshCw,
+  ShieldCheck,
+  Github,
+  Eye,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import GooseLogo from "@/components/GooseLogo";
 
 export default function AboutPage() {
-    return (
-        <div className="min-h-screen bg-[#f2f2f2] text-zinc-900 p-6 flex flex-col items-center">
-            <div className="max-w-2xl w-full space-y-12 py-12">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <Link href="/leaderboard" className="flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-black transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to Leaderboard
-                    </Link>
-                    <GooseLogo className="w-8 h-8 text-black" />
-                </div>
+  return (
+    <div className="min-h-screen bg-[#f2f2f2] text-zinc-900 p-6 flex flex-col items-center">
+      <div className="max-w-2xl w-full space-y-12 py-12">
 
-                {/* Hero */}
-                <div className="space-y-4">
-                    <h1 className="text-4xl font-extrabold tracking-tight">How the Ranking Works</h1>
-                    <p className="text-zinc-600 text-lg">
-                        Waterloo GitRank uses a weighted impact algorithm to measure open-source contributions.
-                        We calculate a <b>GitRank Score</b> based on several GitHub metrics.
-                    </p>
-                </div>
-
-                {/* Metrics Grid */}
-                <div className="grid gap-6">
-                    <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
-                        <div className="flex items-center gap-3 text-yellow-600">
-                            <Star className="w-5 h-5" />
-                            <h3 className="font-bold">Stars (50%)</h3>
-                        </div>
-                        <p className="text-sm text-zinc-500">
-                            Stars represent the community value of your work. We look at stars earned on repositories where you are a primary contributor.
-                        </p>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
-                        <div className="flex items-center gap-3 text-blue-600">
-                            <GitPullRequest className="w-5 h-5" />
-                            <h3 className="font-bold">Pull Requests (30%)</h3>
-                        </div>
-                        <p className="text-sm text-zinc-500">
-                            PRs represent active collaboration. We count merged pull requests to public repositories, with extra weight for high-traffic projects.
-                        </p>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
-                        <div className="flex items-center gap-3 text-green-600">
-                            <GitCommit className="w-5 h-5" />
-                            <h3 className="font-bold">Commits (20%)</h3>
-                        </div>
-                        <p className="text-sm text-zinc-500">
-                            Consistent contribution matters. We analyze commit frequency and code volume over the last 12 months.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Verification Note */}
-                <div className="bg-zinc-900 text-white p-8 rounded-2xl space-y-4 shadow-xl">
-                    <div className="flex items-center gap-3 text-[#EAB308]">
-                        <Award className="w-6 h-6" />
-                        <h3 className="text-xl font-bold">Verification</h3>
-                    </div>
-                    <p className="text-zinc-300">
-                        To join the official leaderboard, you must verify your student status using a <b>@uwaterloo.ca</b> email address.
-                        Once verified, your GitHub stats are synced daily.
-                    </p>
-                    <Button asChild className="bg-[#EAB308] text-black hover:bg-[#D9A307] font-bold">
-                        <Link href="/verify">Get Verified</Link>
-                    </Button>
-                </div>
-
-                {/* Footer */}
-                <footer className="text-center pt-12">
-                    <p className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
-                        © UW GitRank 2026
-                    </p>
-                </footer>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/leaderboard"
+            className="flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-black transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Rankings
+          </Link>
+          <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center">
+            <Github className="w-5 h-5 text-[#EAB308]" />
+          </div>
         </div>
-    );
+
+        {/* Hero */}
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-2 bg-zinc-900 text-[#EAB308] text-xs font-mono font-semibold px-3 py-1.5 rounded-full">
+            <Trophy className="w-3.5 h-3.5" />
+            Ranking System Docs
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight">
+            How the Ranking System Works
+          </h1>
+          <p className="text-zinc-600 text-lg">
+            GitRank scores every verified Waterloo student&apos;s open-source
+            impact using a weighted formula pulled directly from the GitHub API.
+            Here&apos;s exactly how it works.
+          </p>
+        </div>
+
+        {/* Score Formula */}
+        <div className="bg-zinc-900 text-white rounded-2xl p-8 space-y-6 shadow-xl">
+          <div className="flex items-center gap-3 text-[#EAB308]">
+            <Calculator className="w-5 h-5" />
+            <h2 className="text-xl font-bold">The Formula</h2>
+          </div>
+          <div className="font-mono text-sm bg-black/40 rounded-xl p-5 space-y-2 border border-zinc-700">
+            <p className="text-zinc-400">{"// Rank Score calculation"}</p>
+            <p>
+              <span className="text-[#EAB308]">rankScore</span>
+              <span className="text-zinc-300"> = </span>
+              <span className="text-yellow-300">stars</span>
+              <span className="text-zinc-300"> × 10</span>
+            </p>
+            <p>
+              <span className="text-zinc-300 pl-14">+ </span>
+              <span className="text-blue-300">mergedPRs</span>
+              <span className="text-zinc-300"> × 5</span>
+            </p>
+            <p>
+              <span className="text-zinc-300 pl-14">+ </span>
+              <span className="text-green-300">commits</span>
+              <span className="text-zinc-300"> × 1</span>
+            </p>
+          </div>
+          <p className="text-zinc-400 text-sm">
+            Scores are recalculated nightly. Higher weight is given to stars and
+            PRs because they reflect external recognition and meaningful
+            collaboration.
+          </p>
+        </div>
+
+        {/* Metric Breakdown */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold tracking-tight">Metric Breakdown</h2>
+
+          <div className="grid gap-4">
+            {/* Stars */}
+            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-yellow-600">
+                  <Star className="w-5 h-5" />
+                  <h3 className="font-bold text-zinc-900">Repository Stars</h3>
+                </div>
+                <span className="font-mono text-sm font-bold bg-yellow-50 border border-yellow-200 text-yellow-700 px-2.5 py-0.5 rounded-full">
+                  × 10 pts
+                </span>
+              </div>
+              <p className="text-sm text-zinc-500">
+                Stars are the strongest signal of community impact. We count
+                stars on <strong>non-forked repositories</strong> where you are
+                the owner or primary contributor. A repo with 100 stars adds
+                1,000 points to your score.
+              </p>
+              <ul className="text-xs text-zinc-400 space-y-1 pl-4 list-disc">
+                <li>Only counts repos you own (not forks)</li>
+                <li>Reflects real-world adoption of your work</li>
+                <li>Highest weight in the formula (≈ 50% of a typical score)</li>
+              </ul>
+            </div>
+
+            {/* PRs */}
+            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-blue-600">
+                  <GitPullRequest className="w-5 h-5" />
+                  <h3 className="font-bold text-zinc-900">Merged Pull Requests</h3>
+                </div>
+                <span className="font-mono text-sm font-bold bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-0.5 rounded-full">
+                  × 5 pts
+                </span>
+              </div>
+              <p className="text-sm text-zinc-500">
+                Merged PRs represent meaningful collaboration — code that was
+                reviewed, accepted, and shipped. We count your{" "}
+                <strong>total lifetime merged pull requests</strong> across all
+                public repositories.
+              </p>
+              <ul className="text-xs text-zinc-400 space-y-1 pl-4 list-disc">
+                <li>Counts PRs merged into any public repo (yours or others)</li>
+                <li>Rewards contributions to popular open-source projects</li>
+                <li>Only merged PRs count — open or closed ones do not</li>
+              </ul>
+            </div>
+
+            {/* Commits */}
+            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-green-600">
+                  <GitCommit className="w-5 h-5" />
+                  <h3 className="font-bold text-zinc-900">Total Commits</h3>
+                </div>
+                <span className="font-mono text-sm font-bold bg-green-50 border border-green-200 text-green-700 px-2.5 py-0.5 rounded-full">
+                  × 1 pt
+                </span>
+              </div>
+              <p className="text-sm text-zinc-500">
+                Commits show consistent, ongoing activity. We use GitHub&apos;s
+                contribution graph to count{" "}
+                <strong>total commit contributions</strong> across all public
+                repositories. Steady contributors are rewarded even without big
+                star counts.
+              </p>
+              <ul className="text-xs text-zinc-400 space-y-1 pl-4 list-disc">
+                <li>Includes commits to any public repo</li>
+                <li>Lowest individual weight but compounds over time</li>
+                <li>Private repo commits are not counted</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Score Example */}
+        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-[#EAB308]" />
+            <h2 className="font-bold">Example Score Calculation</h2>
+          </div>
+          <div className="p-6 space-y-3 font-mono text-sm">
+            <div className="flex justify-between text-zinc-500">
+              <span>Stars on owned repos</span>
+              <span className="text-yellow-600 font-semibold">842 × 10 = 8,420</span>
+            </div>
+            <div className="flex justify-between text-zinc-500">
+              <span>Merged pull requests</span>
+              <span className="text-blue-600 font-semibold">37 × 5 = 185</span>
+            </div>
+            <div className="flex justify-between text-zinc-500">
+              <span>Total commits</span>
+              <span className="text-green-600 font-semibold">1,204 × 1 = 1,204</span>
+            </div>
+            <div className="border-t border-zinc-100 pt-3 flex justify-between font-bold text-zinc-900 text-base">
+              <span>Rank Score</span>
+              <span className="text-[#EAB308]">9,809</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Sync */}
+        <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+          <div className="flex items-center gap-3 text-zinc-700">
+            <RefreshCw className="w-5 h-5" />
+            <h2 className="font-bold text-zinc-900">Data Sync &amp; Freshness</h2>
+          </div>
+          <p className="text-sm text-zinc-500">
+            GitHub stats are fetched nightly via the{" "}
+            <strong>GitHub GraphQL API</strong>. Rankings update once per day.
+            If you just verified or made a big push, your score will reflect it
+            on the next sync.
+          </p>
+        </div>
+
+        {/* Who can view / join */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold tracking-tight">Access Tiers</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+              <div className="flex items-center gap-3 text-zinc-700">
+                <Eye className="w-5 h-5" />
+                <h3 className="font-bold">Viewer</h3>
+              </div>
+              <p className="text-sm text-zinc-500">
+                Sign in with GitHub to browse the full rankings. No UWaterloo
+                email required. Your GitHub username is recorded so we know
+                who&apos;s visiting.
+              </p>
+              <p className="text-xs font-mono text-zinc-400">GitHub OAuth only</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+              <div className="flex items-center gap-3 text-[#EAB308]">
+                <ShieldCheck className="w-5 h-5" />
+                <h3 className="font-bold">Ranked Contributor</h3>
+              </div>
+              <p className="text-sm text-zinc-500">
+                Verify your student status with a{" "}
+                <strong>@uwaterloo.ca</strong> email to appear on the rankings.
+                Your GitHub stats are then synced nightly.
+              </p>
+              <p className="text-xs font-mono text-zinc-400">GitHub OAuth + UW email</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Verification CTA */}
+        <div className="bg-zinc-900 text-white p-8 rounded-2xl space-y-4 shadow-xl">
+          <div className="flex items-center gap-3 text-[#EAB308]">
+            <Award className="w-6 h-6" />
+            <h3 className="text-xl font-bold">Get on the Board</h3>
+          </div>
+          <p className="text-zinc-300">
+            Already signed in with GitHub? Link your{" "}
+            <strong>@uwaterloo.ca</strong> email to join the official rankings.
+            Verification takes less than a minute.
+          </p>
+          <Button
+            asChild
+            className="bg-[#EAB308] text-black hover:bg-[#D9A307] font-bold"
+          >
+            <Link href="/verify">Verify &amp; Join Rankings</Link>
+          </Button>
+        </div>
+
+        {/* Footer */}
+        <footer className="text-center pt-4">
+          <p className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
+            © UW GitRank 2026
+          </p>
+        </footer>
+      </div>
+    </div>
+  );
 }

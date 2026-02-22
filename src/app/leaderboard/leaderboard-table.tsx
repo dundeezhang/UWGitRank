@@ -138,9 +138,9 @@ export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
           <TableHeader>
             <TableRow className="border-zinc-200 hover:bg-transparent">
               <TableHead className="w-[72px]">Rank</TableHead>
-              <TableHead>Student</TableHead>
+              <TableHead>Contributor</TableHead>
               <TableHead>Program</TableHead>
-              <TableHead className="text-right">GitRank Score</TableHead>
+              <TableHead className="text-right">Rank Score</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -150,7 +150,7 @@ export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
                   colSpan={4}
                   className="h-24 text-center text-muted-foreground"
                 >
-                  No students found.
+                  No contributors found.
                 </TableCell>
               </TableRow>
             ) : (

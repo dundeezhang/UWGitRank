@@ -44,6 +44,52 @@ export async function signInWithGithub() {
     return redirect(data.url)
 }
 
+// Sign in just to view the rankings — redirects to /leaderboard after OAuth
+export async function signInToView() {
+    const supabase = await createClient()
+    const origin = await getOrigin()
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+            redirectTo: `${origin}/auth/callback?next=/leaderboard`,
+            queryParams: {
+                prompt: 'select_account',
+            },
+        },
+    })
+
+    if (error) {
+        console.error(error)
+        return redirect('/?error=Could not authenticate user')
+    }
+
+    return redirect(data.url)
+}
+
+// Sign in to join the rankings — redirects to /verify after OAuth
+export async function signInToJoin() {
+    const supabase = await createClient()
+    const origin = await getOrigin()
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+            redirectTo: `${origin}/auth/callback?next=/verify`,
+            queryParams: {
+                prompt: 'select_account',
+            },
+        },
+    })
+
+    if (error) {
+        console.error(error)
+        return redirect('/?error=Could not authenticate user')
+    }
+
+    return redirect(data.url)
+}
+
 export async function signOut() {
     const supabase = await createClient()
     await supabase.auth.signOut()

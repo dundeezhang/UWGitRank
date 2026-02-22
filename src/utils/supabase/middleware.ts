@@ -61,16 +61,17 @@ export async function updateSession(request: NextRequest) {
     const isVerifySuccess = pathname === '/verify/success'
     const isLeaderboard = pathname === '/leaderboard'
     const isProfile = pathname.startsWith('/profile')
+    const isAbout = pathname === '/about'
 
     // Public routes that don't need any auth check
-    if (isProfile || isAuthCallback || isAuthConfirm) {
+    if (isProfile || isAuthCallback || isAuthConfirm || isAbout) {
         return supabaseResponse
     }
 
-    // If not logged in and trying to access protected routes (not landing page or leaderboard).
-    // /verify/success is also exempt: the session may still be propagating from the
-    // /auth/confirm redirect, and the page itself handles the null-user case.
-    if (!user && !isLandingPage && !isLeaderboard && !isVerifySuccess) {
+    // /leaderboard requires GitHub auth (but not email verification).
+    // Unauthenticated visitors are sent to the landing page to sign in.
+    // /verify/success is also exempt: the session may still be propagating.
+    if (!user && !isLandingPage && !isVerifySuccess) {
         const url = request.nextUrl.clone()
         url.pathname = '/'
         return NextResponse.redirect(url)
@@ -86,15 +87,16 @@ export async function updateSession(request: NextRequest) {
 
         const isVerified = profile?.is_verified
 
-        // Cleanup: If verified, redirect AWAY from /verify paths (except /verify/success)
+        // If verified, redirect AWAY from /verify paths (except /verify/success)
         if (isVerified && isVerifyPage && !isVerifySuccess) {
             const url = request.nextUrl.clone()
             url.pathname = '/leaderboard'
             return NextResponse.redirect(url)
         }
 
-        // If not verified and trying to access protected routes (not landing page or verify pages)
-        if (!isVerified && !isVerifyPage && !isLandingPage) {
+        // Unverified users can access: landing, verify pages, and leaderboard (as viewers).
+        // Any other protected route redirects them to /verify.
+        if (!isVerified && !isVerifyPage && !isLandingPage && !isLeaderboard) {
             const url = request.nextUrl.clone()
             url.pathname = '/verify'
             return NextResponse.redirect(url)
