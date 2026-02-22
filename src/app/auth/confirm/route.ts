@@ -16,13 +16,24 @@ export async function GET(request: NextRequest) {
     if (token_hash && type) {
         const supabase = await createClient()
 
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
             type,
             token_hash,
         })
 
         if (!error) {
-            // redirect user to specified redirect location or root
+            // Mark profile as verified now that the @uwaterloo.ca email is confirmed
+            if (data.user) {
+                const verifiedEmail = data.user.email
+                await supabase
+                    .from('profiles')
+                    .update({
+                        is_verified: true,
+                        email: verifiedEmail,
+                    })
+                    .eq('id', data.user.id)
+            }
+
             return NextResponse.redirect(redirectTo)
         } else {
             console.error('Verification error:', error)

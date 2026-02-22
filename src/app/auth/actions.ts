@@ -4,10 +4,20 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 
-export async function signInWithGithub() {
-    const supabase = await createClient()
+async function getOrigin() {
     const headerList = await headers()
     const origin = headerList.get('origin')
+    if (origin) return origin
+
+    // Fallback: build from host header
+    const host = headerList.get('x-forwarded-host') ?? headerList.get('host')
+    const proto = headerList.get('x-forwarded-proto') ?? 'http'
+    return `${proto}://${host}`
+}
+
+export async function signInWithGithub() {
+    const supabase = await createClient()
+    const origin = await getOrigin()
 
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
@@ -37,9 +47,7 @@ export async function verifyStudentEmail(prevState: any, formData: FormData) {
         return { error: 'Please enter a valid @uwaterloo.ca email address' }
     }
 
-    const headerList = await headers()
-    const origin = headerList.get('origin')
-
+    const origin = await getOrigin()
     const supabase = await createClient()
     const { error } = await supabase.auth.updateUser(
         { email },
