@@ -83,7 +83,8 @@ export function VerifyForm() {
                 return
             }
 
-            router.push('/leaderboard')
+            // Redirect to leaderboard with verified=1 so we can show success and their ranking
+            router.push('/leaderboard?verified=1')
         })
     }
 

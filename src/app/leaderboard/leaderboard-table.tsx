@@ -39,7 +39,13 @@ const FACULTIES: Faculty[] = [
 
 const TIME_WINDOWS: TimeWindow[] = ["7d", "30d", "1y", "all"];
 
-export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
+export function LeaderboardTable({
+  data,
+  currentUserUsername,
+}: {
+  data: LeaderboardEntry[];
+  currentUserUsername?: string;
+}) {
   const [query, setQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState<Faculty | null>(null);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("30d");
@@ -196,6 +202,9 @@ export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
                 ) : (
                   tableEntries.map((entry, i) => {
                     const stats = getWindowStats(entry, timeWindow);
+                    const isCurrentUser =
+                      currentUserUsername &&
+                      entry.username === currentUserUsername;
 
                     return (
                       <motion.tr
@@ -207,7 +216,11 @@ export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
                           delay: Math.min(i * 0.03, 0.45),
                           ease: "easeOut",
                         }}
-                        className="border-b border-zinc-200 hover:bg-muted/30 transition-colors"
+                        className={`border-b border-zinc-200 transition-colors ${
+                          isCurrentUser
+                            ? "bg-primary/10 hover:bg-primary/15 ring-1 ring-primary/30"
+                            : "hover:bg-muted/30"
+                        }`}
                       >
                         <TableCell className="font-bold text-lg">
                           <span className="text-muted-foreground">

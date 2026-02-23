@@ -4,10 +4,10 @@ import { refreshLeaderboard } from "@/lib/leaderboard";
 import { calculateWaterlooScore } from "@/utils/ranking";
 
 /**
- * Fetch GitHub data for a single user, upsert their metrics,
- * and refresh the leaderboard materialized view.
- * Used for immediate sync after verification so users appear
- * on the leaderboard right away.
+ * Fetch GitHub data for a single user, compute rank scores for all time windows
+ * (7d, 30d, 1y, all-time) using the same formula, upsert metrics, and refresh
+ * the leaderboard. Used for immediate sync after verification so users appear
+ * on the leaderboard with correct scores for every period.
  */
 export async function syncSingleUser(userId: string, githubUsername: string): Promise<void> {
   const data = await fetchGitHubData(githubUsername);

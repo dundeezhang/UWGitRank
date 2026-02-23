@@ -151,40 +151,61 @@ export async function verifyOtpCode(email: string, token: string) {
 
     // Upsert profile with is_verified = true and github_username
     const githubUsername = (user.user_metadata?.user_name || user.user_metadata?.preferred_username) as string | undefined
+    const fullName = user.user_metadata?.full_name as string | undefined
+    const avatarUrl = user.user_metadata?.avatar_url as string | undefined
+    const emailLocalPart = verifiedEmail.split('@')[0]
+    const preferredUsername = githubUsername || emailLocalPart
+    const userId = user.id
 
-    try {
-        await prisma.profile.upsert({
-            where: { id: user.id },
+    async function doUpsert(uid: string, username: string) {
+        return prisma.profile.upsert({
+            where: { id: uid },
             create: {
-                id: user.id,
-                username: githubUsername || verifiedEmail.split('@')[0],
-                githubUsername: githubUsername,
-                fullName: user.user_metadata?.full_name as string | undefined,
-                avatarUrl: user.user_metadata?.avatar_url as string | undefined,
+                id: uid,
+                username,
+                githubUsername: githubUsername ?? undefined,
+                fullName,
+                avatarUrl,
                 email: verifiedEmail,
                 isVerified: true,
             },
             update: {
                 isVerified: true,
                 email: verifiedEmail,
-                githubUsername: githubUsername,
+                githubUsername: githubUsername ?? undefined,
             },
         })
+    }
 
-        console.log('[verifyOtpCode] Profile verified for user:', user.id, 'email:', verifiedEmail)
-
-        // Immediately sync GitHub data so the user appears on the leaderboard
-        if (githubUsername) {
+    try {
+        await doUpsert(userId, preferredUsername)
+        console.log('[verifyOtpCode] Profile verified for user:', userId, 'email:', verifiedEmail)
+    } catch (err: unknown) {
+        // P2002 = unique constraint violation (e.g. username already taken)
+        const isUniqueViolation = err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002'
+        if (isUniqueViolation) {
+            const fallbackUsername = `user_${userId.slice(0, 8)}`
             try {
-                await syncSingleUser(user.id, githubUsername)
-                console.log('[verifyOtpCode] GitHub data synced for:', githubUsername)
-            } catch (err) {
-                console.error('[verifyOtpCode] Sync failed (user will appear after next cron):', err)
+                await doUpsert(userId, fallbackUsername)
+                console.log('[verifyOtpCode] Profile verified with fallback username for user:', userId)
+            } catch (retryErr) {
+                console.error('[verifyOtpCode] Profile upsert failed (retry):', retryErr)
+                return { error: 'Verification succeeded but we could not save your profile. Please try again.' }
             }
+        } else {
+            console.error('[verifyOtpCode] Profile upsert failed:', err)
+            return { error: 'Verification succeeded but we could not save your profile. Please try again.' }
         }
-    } catch (err) {
-        console.error('[verifyOtpCode] Profile upsert failed:', err)
-        return { error: 'Verification succeeded but we could not save your profile. Please try again.' }
+    }
+
+    // Immediately sync GitHub data so the user appears on the leaderboard
+    if (githubUsername) {
+        try {
+            await syncSingleUser(user.id, githubUsername)
+            console.log('[verifyOtpCode] GitHub data synced for:', githubUsername)
+        } catch (err) {
+            console.error('[verifyOtpCode] Sync failed (user will appear after next cron):', err)
+        }
     }
 
     return { success: true }

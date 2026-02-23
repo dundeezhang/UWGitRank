@@ -9,8 +9,13 @@ import { signOut } from "@/app/auth/actions";
 import { LeaderboardTable } from "./leaderboard-table";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
 import { Github } from "lucide-react";
+import { VerificationSuccessBanner } from "./verification-success-banner";
 
-export default async function LeaderboardPage() {
+type PageProps = { searchParams: Promise<{ verified?: string }> };
+
+export default async function LeaderboardPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const showVerifiedSuccess = params.verified === "1";
   const supabase = await createClient();
 
   let user = null;
@@ -122,8 +127,19 @@ export default async function LeaderboardPage() {
           </div>
         </FadeIn>
 
+        {showVerifiedSuccess && user && (
+          <VerificationSuccessBanner
+            githubUsername={user.user_metadata?.user_name as string | undefined}
+          />
+        )}
+
         <FadeIn delay={0.15}>
-          <LeaderboardTable data={entries} />
+          <LeaderboardTable
+            data={entries}
+            currentUserUsername={
+              user?.user_metadata?.user_name as string | undefined
+            }
+          />
         </FadeIn>
       </main>
     </div>

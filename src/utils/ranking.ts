@@ -1,3 +1,8 @@
+/**
+ * Waterloo GitRank score formula: stars×10 + PRs×5 + commits×1.
+ * Used for every time window (7d, 30d, 1y, all). Stars are always all-time;
+ * prs and commits are for the specific window when computing windowed scores.
+ */
 export function calculateWaterlooScore(stats: {
   stars: number;
   prs: number;

@@ -161,8 +161,10 @@ function countPRsInWindow(prDates: Date[], windowStart: Date): number {
 }
 
 /**
- * Fetch all GitHub data for a user: all-time stats + windowed commits/PRs.
- * Makes 4 parallel API calls per user.
+ * Fetch all GitHub data needed for rank scores in every time window.
+ * Returns: stars (all-time), commits and merged PRs for 7d / 30d / 1y / all-time.
+ * Used by sync to compute score_7d, score_30d, score_1y, and score_all with the
+ * same formula (stars×10 + PRs×5 + commits×1). Makes 4 parallel API calls per user.
  */
 export async function fetchGitHubData(username: string): Promise<GitHubData> {
   const now = new Date();
