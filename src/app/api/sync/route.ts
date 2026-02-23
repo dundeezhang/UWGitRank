@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { fetchGitHubStats } from "@/lib/github";
+import { fetchGitHubData } from "@/lib/github";
 import { calculateWaterlooScore } from "@/utils/ranking";
 import { NextResponse } from "next/server";
 
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   // 1. Get all verified users
   const { data: users, error: usersError } = await supabase
     .from("profiles")
-    .select("id, username")
+    .select("id, github_username")
     .eq("is_verified", true);
 
   if (usersError) {
@@ -50,11 +50,27 @@ export async function GET(request: Request) {
 
     const chunkResults = await Promise.allSettled(
       chunk.map(async (user) => {
-        const stats = await fetchGitHubStats(user.username);
-        const rankScore = calculateWaterlooScore({
-          stars: stats.stars,
-          prs: stats.mergedPRs,
-          commits: stats.commits,
+        const data = await fetchGitHubData(user.github_username);
+
+        const scoreAll = calculateWaterlooScore({
+          stars: data.stars,
+          prs: data.mergedPRsAll,
+          commits: data.commitsAll,
+        });
+        const score7d = calculateWaterlooScore({
+          stars: data.stars,
+          prs: data.prs7d,
+          commits: data.commits7d,
+        });
+        const score30d = calculateWaterlooScore({
+          stars: data.stars,
+          prs: data.prs30d,
+          commits: data.commits30d,
+        });
+        const score1y = calculateWaterlooScore({
+          stars: data.stars,
+          prs: data.prs1y,
+          commits: data.commits1y,
         });
 
         const { error: upsertError } = await supabase
@@ -62,23 +78,32 @@ export async function GET(request: Request) {
           .upsert(
             {
               user_id: user.id,
-              stars: stats.stars,
-              commits: stats.commits,
-              merged_prs: stats.mergedPRs,
-              rank_score: rankScore,
+              stars: data.stars,
+              commits: data.commitsAll,
+              merged_prs: data.mergedPRsAll,
+              rank_score: scoreAll,
+              commits_7d: data.commits7d,
+              commits_30d: data.commits30d,
+              commits_1y: data.commits1y,
+              prs_7d: data.prs7d,
+              prs_30d: data.prs30d,
+              prs_1y: data.prs1y,
+              score_7d: score7d,
+              score_30d: score30d,
+              score_1y: score1y,
               last_synced: new Date().toISOString(),
             },
             { onConflict: "user_id" }
           );
 
         if (upsertError) throw new Error(`db error: ${upsertError.message}`);
-        return user.username;
+        return user.github_username;
       })
     );
 
     for (let j = 0; j < chunkResults.length; j++) {
       const result = chunkResults[j];
-      const username = chunk[j].username;
+      const username = chunk[j].github_username;
       if (result.status === "fulfilled") {
         results.push({ username, status: "ok" });
       } else {
@@ -88,6 +113,12 @@ export async function GET(request: Request) {
   }
 
   const synced = results.filter((r) => r.status === "ok").length;
+
+  // Refresh the materialized view so the leaderboard reflects updated scores
+  const { error: refreshError } = await supabase.rpc("refresh_leaderboard");
+  if (refreshError) {
+    console.warn("Failed to refresh leaderboard materialized view:", refreshError.message);
+  }
 
   return NextResponse.json({ synced, total: users.length, results });
 }

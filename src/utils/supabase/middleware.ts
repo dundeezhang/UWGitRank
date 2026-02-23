@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
     // /leaderboard requires GitHub auth (but not email verification).
     // Unauthenticated visitors are sent to the landing page to sign in.
     // /verify/success is also exempt: the session may still be propagating.
-    if (!user && !isLandingPage && !isVerifySuccess) {
+    if (!user && !isLandingPage && !isVerifySuccess && !isLeaderboard) {
         const url = request.nextUrl.clone()
         url.pathname = '/'
         return NextResponse.redirect(url)

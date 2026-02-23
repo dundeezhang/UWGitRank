@@ -134,3 +134,50 @@
   from { transform: translateX(-80px); }
   to   { transform: translateX(calc(100vw + 80px)); }
 }
+
+/* Podium effects */
+@keyframes holographic {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0%   { opacity: 0.3; transform: translateX(-100%) rotate(25deg); }
+  50%  { opacity: 0.6; }
+  100% { opacity: 0.3; transform: translateX(100%) rotate(25deg); }
+}
+
+.card-holographic {
+  background: linear-gradient(
+    135deg,
+    #c0a0e0, #a0d4f0, #f0c8e0, #d0e8f8, #e0b8d8, #a8d8f0, #c0a0e0
+  );
+  background-size: 400% 400%;
+  animation: holographic 8s ease infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-holographic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.5) 45%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 70%
+  );
+  animation: shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.card-silver {
+  background: linear-gradient(135deg, #f0f0f0, #b8b8b8, #d8d8d8, #a0a0a0, #c8c8c8);
+}
+
+.card-bronze {
+  background: linear-gradient(135deg, #e8c89a, #b87333, #d4956a, #a0522d, #cd7f32);
+}

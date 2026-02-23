@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Trophy, BadgeCheck } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, BadgeCheck } from "lucide-react";
+import { Tooltip } from "radix-ui";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -11,221 +12,291 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Podium } from "@/components/Podium";
+import type {
+  LeaderboardEntry,
+  RankedEntry,
+  TimeWindow,
+  Faculty,
+} from "@/lib/leaderboard";
+import {
+  getWindowScore,
+  getWindowStats,
+  getFaculty,
+  TIME_WINDOW_LABELS,
+} from "@/lib/leaderboard";
 
+export type { LeaderboardEntry };
 
-export interface LeaderboardEntry {
-  rank: number;
-  username: string;
-  avatar_url: string | null;
-  is_verified: boolean;
-  program: string | null;
-  rank_score: number;
-}
+const FACULTIES: Faculty[] = [
+  "Engineering",
+  "Math",
+  "Environment",
+  "Health",
+  "Arts",
+];
 
-const PROGRAM_SHORT: Record<string, string> = {
-  "Software Engineering": "SE",
-  "Computer Science": "CS",
-  "Computer Engineering": "CE",
-  "Mathematics": "Math",
-  "Computing and Financial Management": "CFM",
-  "Data Science": "DS",
-  "Electrical Engineering": "EE",
-  "Mechatronics Engineering": "Tron",
-  "Systems Design Engineering": "SYDE",
-  "Management Engineering": "MSCI",
-  "Biomedical Engineering": "BME",
-  "Statistics": "Stats",
-  "Combinatorics and Optimization": "C&O",
-  "Applied Mathematics": "AM",
-  "Computational Mathematics": "CM",
-  "Mathematical Finance": "MF",
-  "Geomatics": "Geom",
-  "Information Technology Management": "ITM",
-};
-
-function shortProgram(program: string): string {
-  return PROGRAM_SHORT[program] ?? program;
-}
-
-const TROPHY_COLORS: Record<number, string> = {
-  1: "text-yellow-500",
-  2: "text-zinc-400",
-  3: "text-amber-700",
-};
+const TIME_WINDOWS: TimeWindow[] = ["7d", "30d", "1y", "all"];
 
 export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
   const [query, setQuery] = useState("");
-  const [programFilter, setProgramFilter] = useState<string | null>(null);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [facultyFilter, setFacultyFilter] = useState<Faculty | null>(null);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("30d");
 
-  // Unique programs present in the data
-  const programs = Array.from(
-    new Set(data.map((e) => e.program).filter((p): p is string => p !== null))
-  ).sort();
+  // Faculties present in the data
+  const availableFaculties = useMemo(() => {
+    const set = new Set<Faculty>();
+    for (const e of data) {
+      const f = getFaculty(e.program);
+      if (f) set.add(f);
+    }
+    return FACULTIES.filter((f) => set.has(f));
+  }, [data]);
 
-  const filtered = data.filter((entry) => {
-    if (query && !entry.username.toLowerCase().includes(query.toLowerCase())) {
-      return false;
-    }
-    if (programFilter && entry.program !== programFilter) {
-      return false;
-    }
-    if (verifiedOnly && !entry.is_verified) {
-      return false;
-    }
-    return true;
-  });
+  // Sort by selected window, assign ranks, then filter
+  const ranked: RankedEntry[] = useMemo(() => {
+    return [...data]
+      .sort(
+        (a, b) => getWindowScore(b, timeWindow) - getWindowScore(a, timeWindow),
+      )
+      .map((entry, i) => ({ ...entry, rank: i + 1 }));
+  }, [data, timeWindow]);
+
+  const filtered = useMemo(() => {
+    return ranked.filter((entry) => {
+      if (query) {
+        const q = query.toLowerCase();
+        const matchUsername = entry.username.toLowerCase().includes(q);
+        if (!matchUsername) return false;
+      }
+      if (facultyFilter && getFaculty(entry.program) !== facultyFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [ranked, query, facultyFilter]);
+
+  const podiumEntries = filtered.slice(0, 3);
+  const tableEntries = filtered.slice(3);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search username..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <button
-            onClick={() => setVerifiedOnly(!verifiedOnly)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${verifiedOnly
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-zinc-200 text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <BadgeCheck className="w-3.5 h-3.5" />
-            Verified only
-          </button>
-        </div>
-
-        {programs.length > 0 && (
+    <Tooltip.Provider delayDuration={200}>
+      <div className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col gap-3">
+          {/* Time window selector */}
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-muted-foreground font-medium mr-1">Program:</span>
-            <button
-              onClick={() => setProgramFilter(null)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${programFilter === null
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-zinc-200 text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              All
-            </button>
-            {programs.map((p) => (
+            <span className="text-xs text-muted-foreground font-medium mr-1">
+              Period:
+            </span>
+            {TIME_WINDOWS.map((w) => (
               <button
-                key={p}
-                onClick={() =>
-                  setProgramFilter(programFilter === p ? null : p)
-                }
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${programFilter === p
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-zinc-200 text-muted-foreground hover:text-foreground"
-                  }`}
+                key={w}
+                onClick={() => setTimeWindow(w)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  timeWindow === w
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-zinc-200 text-muted-foreground hover:text-foreground"
+                }`}
               >
-                <span className="hidden md:inline">{p}</span>
-                <span className="md:hidden">{shortProgram(p)}</span>
+                {TIME_WINDOW_LABELS[w]}
               </button>
             ))}
           </div>
+
+          {/* Search + Faculty filter */}
+          {availableFaculties.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs text-muted-foreground font-medium mr-1">
+                Faculty:
+              </span>
+              <button
+                onClick={() => setFacultyFilter(null)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  facultyFilter === null
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-zinc-200 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                All
+              </button>
+              {availableFaculties.map((f) => (
+                <button
+                  key={f}
+                  onClick={() =>
+                    setFacultyFilter(facultyFilter === f ? null : f)
+                  }
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    facultyFilter === f
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-zinc-200 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search name or username..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Podium */}
+        {podiumEntries.length > 0 && (
+          <Podium entries={podiumEntries} timeWindow={timeWindow} />
         )}
-      </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-zinc-200 hover:bg-transparent">
-              <TableHead className="w-[72px]">Rank</TableHead>
-              <TableHead>Contributor</TableHead>
-              <TableHead>Program</TableHead>
-              <TableHead className="text-right">Rank Score</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
+        {/* Table (entries after top 3) */}
+        <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
+          <Table>
+            <TableHeader>
               <TableRow className="border-zinc-200 hover:bg-transparent">
-                <TableCell
-                  colSpan={4}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No contributors found.
-                </TableCell>
+                <TableHead className="w-[72px]">Rank</TableHead>
+                <TableHead>Contributor</TableHead>
+                <TableHead>Program</TableHead>
+                <TableHead className="text-right">Rank Score</TableHead>
               </TableRow>
-            ) : (
-              filtered.map((entry) => (
-                <TableRow
-                  key={entry.username}
-                  className="border-zinc-200 hover:bg-muted/30 transition-colors"
-                >
-                  {/* Rank */}
-                  <TableCell className="font-bold text-lg">
-                    {entry.rank <= 3 ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Trophy
-                          className={`w-4 h-4 ${TROPHY_COLORS[entry.rank]}`}
-                        />
-                        <span className={TROPHY_COLORS[entry.rank]}>
-                          {entry.rank}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        {entry.rank}
-                      </span>
-                    )}
-                  </TableCell>
-
-                  {/* Student */}
-                  <TableCell>
-                    <a
-                      href={`https://github.com/${entry.username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-3 group"
-                    >
-                      <img
-                        src={
-                          entry.avatar_url ??
-                          `https://github.com/${entry.username}.png`
-                        }
-                        alt={entry.username}
-                        width={32}
-                        height={32}
-                        className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
-                      />
-                      <span className="font-medium transition-colors group-hover:text-yellow-500 group-hover:underline underline-offset-4">
-                        {entry.username}
-                      </span>
-                      {entry.is_verified && (
-                        <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
-                      )}
-                    </a>
-                  </TableCell>
-
-                  {/* Program — short on mobile, full on desktop */}
-                  <TableCell className="text-muted-foreground">
-                    {entry.program ? (
-                      <>
-                        <span className="hidden md:inline">{entry.program}</span>
-                        <span className="md:hidden">{shortProgram(entry.program)}</span>
-                      </>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-
-                  {/* Impact Score */}
-                  <TableCell className="text-right font-mono font-semibold tabular-nums">
-                    {entry.rank_score.toLocaleString()}
+            </TableHeader>
+            <TableBody>
+              {tableEntries.length === 0 ? (
+                <TableRow className="border-zinc-200 hover:bg-transparent">
+                  <TableCell
+                    colSpan={4}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    {filtered.length === 0
+                      ? "No contributors found."
+                      : "All contributors shown in the podium above."}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                tableEntries.map((entry) => {
+                  const stats = getWindowStats(entry, timeWindow);
+
+                  return (
+                    <TableRow
+                      key={entry.username}
+                      className="border-zinc-200 hover:bg-muted/30 transition-colors"
+                    >
+                      {/* Rank */}
+                      <TableCell className="font-bold text-lg">
+                        <span className="text-muted-foreground">
+                          {entry.rank}
+                        </span>
+                      </TableCell>
+
+                      {/* Student */}
+                      <TableCell>
+                        <a
+                          href={`https://github.com/${entry.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-3 group"
+                        >
+                          <img
+                            src={`https://github.com/${entry.username}.png`}
+                            alt={entry.username}
+                            width={32}
+                            height={32}
+                            className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
+                          />
+                          <span className="font-medium transition-colors group-hover:text-yellow-500 group-hover:underline underline-offset-4">
+                            {entry.username}
+                          </span>
+                          {entry.is_verified && (
+                            <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
+                          )}
+                        </a>
+                      </TableCell>
+
+                      {/* Program */}
+                      <TableCell className="text-muted-foreground">
+                        {entry.program ?? "—"}
+                      </TableCell>
+
+                      {/* Score with tooltip */}
+                      <TableCell className="text-right">
+                        <ScoreTooltip
+                          stars={entry.stars}
+                          prs={stats.prs}
+                          commits={stats.commits}
+                          score={stats.score}
+                          timeWindow={timeWindow}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+    </Tooltip.Provider>
+  );
+}
+
+function ScoreTooltip({
+  stars,
+  prs,
+  commits,
+  score,
+  timeWindow,
+}: {
+  stars: number;
+  prs: number;
+  commits: number;
+  score: number;
+  timeWindow: TimeWindow;
+}) {
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <span className="cursor-default font-mono font-semibold tabular-nums">
+          {score.toLocaleString()}
+        </span>
+      </Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content
+          className="rounded-lg bg-zinc-900 text-white px-3 py-2.5 text-xs shadow-lg z-50"
+          sideOffset={5}
+          side="left"
+        >
+          <div className="space-y-1 font-mono min-w-[140px]">
+            <div className="flex justify-between gap-4">
+              <span className="text-yellow-300">Stars ×10</span>
+              <span>{(stars * 10).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-blue-300">PRs ×5</span>
+              <span>{(prs * 5).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-green-300">Commits ×1</span>
+              <span>{commits.toLocaleString()}</span>
+            </div>
+            <div className="border-t border-zinc-700 pt-1 flex justify-between gap-4 font-semibold">
+              <span>Total</span>
+              <span>{score.toLocaleString()}</span>
+            </div>
+            {timeWindow !== "all" && (
+              <div className="text-[10px] text-zinc-500 pt-0.5">
+                Stars are always all-time
+              </div>
+            )}
+          </div>
+          <Tooltip.Arrow className="fill-zinc-900" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }
