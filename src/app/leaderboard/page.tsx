@@ -11,7 +11,6 @@ import type { LeaderboardEntry } from "@/lib/leaderboard";
 import { Github } from "lucide-react";
 import { VerificationSuccessBanner } from "./verification-success-banner";
 import { JoinLeaderboardDialog } from "@/components/JoinLeaderboardDialog";
-import { Button } from "@/components/ui/button";
 
 type PageProps = { searchParams: Promise<{ verified?: string }> };
 
