@@ -61,6 +61,7 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthCallback = pathname.startsWith("/auth/callback");
   const isAuthConfirm = pathname.startsWith("/auth/confirm");
+  const isSignupPending = pathname.startsWith("/auth/signup-pending");
   const isLandingPage = pathname === "/";
   const isVerifyPage = pathname.startsWith("/verify");
   const isVerifySuccess = pathname === "/verify/success";
@@ -69,7 +70,7 @@ export async function updateSession(request: NextRequest) {
   const isAbout = pathname === "/about";
 
   // Public routes that don't need any auth check
-  if (isProfile || isAuthCallback || isAuthConfirm || isAbout) {
+  if (isProfile || isAuthCallback || isAuthConfirm || isSignupPending || isAbout) {
     return supabaseResponse;
   }
 
