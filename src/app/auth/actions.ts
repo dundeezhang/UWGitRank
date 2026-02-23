@@ -2,9 +2,11 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { syncSingleUser } from '@/lib/sync-user'
+
+const SIGNUP_PENDING_COOKIE = 'signup_pending'
 
 async function getOrigin() {
     // Prefer an explicit env var so the URL is always the canonical domain.
@@ -149,7 +151,19 @@ export async function verifyOtpCode(email: string, token: string) {
         return { error: 'Email is not a verified @uwaterloo.ca address' }
     }
 
-    // Upsert profile with is_verified = true and github_username
+    // Optional signup details from cookie (set when user chose "Sign up" and filled the form)
+    let signupDetails: { firstName?: string; lastName?: string; program?: string; linkedinUrl?: string } = {}
+    try {
+        const cookieStore = await cookies()
+        const raw = cookieStore.get(SIGNUP_PENDING_COOKIE)?.value
+        if (raw) {
+            signupDetails = JSON.parse(raw) as typeof signupDetails
+            cookieStore.delete(SIGNUP_PENDING_COOKIE)
+        }
+    } catch {
+        // Ignore cookie parse errors
+    }
+
     const githubUsername = (user.user_metadata?.user_name || user.user_metadata?.preferred_username) as string | undefined
     const fullName = user.user_metadata?.full_name as string | undefined
     const avatarUrl = user.user_metadata?.avatar_url as string | undefined
@@ -157,23 +171,34 @@ export async function verifyOtpCode(email: string, token: string) {
     const preferredUsername = githubUsername || emailLocalPart
     const userId = user.id
 
+    const profileCreate = {
+        id: userId,
+        username: preferredUsername,
+        githubUsername: githubUsername ?? undefined,
+        fullName,
+        firstName: signupDetails.firstName ?? undefined,
+        lastName: signupDetails.lastName ?? undefined,
+        avatarUrl,
+        email: verifiedEmail,
+        isVerified: true,
+        program: signupDetails.program ?? undefined,
+        linkedinUrl: signupDetails.linkedinUrl ?? undefined,
+    }
+    const profileUpdate = {
+        isVerified: true,
+        email: verifiedEmail,
+        githubUsername: githubUsername ?? undefined,
+        firstName: signupDetails.firstName ?? undefined,
+        lastName: signupDetails.lastName ?? undefined,
+        program: signupDetails.program ?? undefined,
+        linkedinUrl: signupDetails.linkedinUrl ?? undefined,
+    }
+
     async function doUpsert(uid: string, username: string) {
         return prisma.profile.upsert({
             where: { id: uid },
-            create: {
-                id: uid,
-                username,
-                githubUsername: githubUsername ?? undefined,
-                fullName,
-                avatarUrl,
-                email: verifiedEmail,
-                isVerified: true,
-            },
-            update: {
-                isVerified: true,
-                email: verifiedEmail,
-                githubUsername: githubUsername ?? undefined,
-            },
+            create: { ...profileCreate, username },
+            update: profileUpdate,
         })
     }
 

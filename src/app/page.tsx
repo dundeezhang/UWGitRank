@@ -1,4 +1,4 @@
-import { signOut, signInToJoin } from "./auth/actions";
+import { signOut, signInToView } from "./auth/actions";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { syncSingleUser } from "@/lib/sync-user";
@@ -8,6 +8,7 @@ import { AboutModal } from "@/components/AboutModal";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
 import RunningCat from "@/components/RunningCat";
+import { JoinLeaderboardDialog } from "@/components/JoinLeaderboardDialog";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -99,16 +100,16 @@ export default async function Home() {
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <form action={signInToJoin}>
+              <JoinLeaderboardDialog signInToView={signInToView}>
                 <Button
-                  type="submit"
+                  type="button"
                   size="lg"
                   className="h-14 px-8 rounded-lg bg-[#EAB308] text-black hover:bg-[#D9A307] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
                 >
                   <Github className="w-5 h-5" />
                   Join the Leaderboard
                 </Button>
-              </form>
+              </JoinLeaderboardDialog>
 
               <Button
                 asChild

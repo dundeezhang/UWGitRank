@@ -5,11 +5,13 @@ import { Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
-import { signOut, signInToJoin } from "@/app/auth/actions";
+import { signOut, signInToView } from "@/app/auth/actions";
 import { LeaderboardTable } from "./leaderboard-table";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
 import { Github } from "lucide-react";
 import { VerificationSuccessBanner } from "./verification-success-banner";
+import { JoinLeaderboardDialog } from "@/components/JoinLeaderboardDialog";
+import { Button } from "@/components/ui/button";
 
 type PageProps = { searchParams: Promise<{ verified?: string }> };
 
@@ -92,27 +94,17 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                 How Rankings Work
               </Button>
             </Link>
-            {!user ? (
-              <form action={signInToJoin}>
+            {(!user || !isVerified) ? (
+              <JoinLeaderboardDialog signInToView={signInToView}>
                 <Button
-                  type="submit"
+                  type="button"
                   size="sm"
                   className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
                 >
                   <Github className="w-4 h-4" />
                   Join Leaderboard
                 </Button>
-              </form>
-            ) : !isVerified ? (
-              <Link href="/verify">
-                <Button
-                  size="sm"
-                  className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
-                >
-                  <Github className="w-4 h-4" />
-                  Join Leaderboard
-                </Button>
-              </Link>
+              </JoinLeaderboardDialog>
             ) : null}
             {user && (
               <form action={signOut}>

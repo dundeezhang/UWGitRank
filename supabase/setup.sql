@@ -3,10 +3,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   username         TEXT UNIQUE,
   github_username  TEXT,
   full_name        TEXT,
+  first_name       TEXT,
+  last_name        TEXT,
   avatar_url       TEXT,
   email            TEXT,
   is_verified      BOOLEAN NOT NULL DEFAULT FALSE,
-  program          TEXT
+  program          TEXT,
+  linkedin_url     TEXT
 );
 
 -- Index: middleware & sync route filter on is_verified

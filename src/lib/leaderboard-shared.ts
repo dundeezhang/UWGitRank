@@ -82,37 +82,31 @@ export type Faculty =
   | "Health"
   | "Arts";
 
-const FACULTY_MAP: Record<string, Faculty> = {
-  "Software Engineering": "Engineering",
-  "Computer Engineering": "Engineering",
-  "Electrical Engineering": "Engineering",
-  "Mechatronics Engineering": "Engineering",
-  "Systems Design Engineering": "Engineering",
-  "Management Engineering": "Engineering",
-  "Biomedical Engineering": "Engineering",
-  "Chemical Engineering": "Engineering",
-  "Civil Engineering": "Engineering",
-  "Environmental Engineering": "Engineering",
-  "Geological Engineering": "Engineering",
-  "Mechanical Engineering": "Engineering",
-  "Nanotechnology Engineering": "Engineering",
-  "Architectural Engineering": "Engineering",
-  "Computer Science": "Math",
-  Mathematics: "Math",
-  "Computing and Financial Management": "Math",
-  "Data Science": "Math",
-  Statistics: "Math",
-  "Combinatorics and Optimization": "Math",
-  "Applied Mathematics": "Math",
-  "Computational Mathematics": "Math",
-  "Mathematical Finance": "Math",
-  Geomatics: "Environment",
-  "Information Technology Management": "Environment",
-  "Environment and Business": "Environment",
-  "Geography and Aviation": "Environment",
-  Planning: "Environment",
-  "Knowledge Integration": "Environment",
+  const FACULTY_MAP: Record<string, Faculty> = {
+    // Faculty of Engineering
+    "Software Engineering": "Engineering",
+    "Computer Engineering": "Engineering",
+    "Electrical Engineering": "Engineering",
+    "Mechatronics Engineering": "Engineering",
+    "Systems Design Engineering": "Engineering",
+    "Management Engineering": "Engineering",
+    "Biomedical Engineering": "Engineering",
+    "Chemical Engineering": "Engineering",
+    "Civil Engineering": "Engineering",
+    "Environmental Engineering": "Engineering",
+    "Geological Engineering": "Engineering",
+    "Mechanical Engineering": "Engineering",
+    "Nanotechnology Engineering": "Engineering",
+    "Architectural Engineering": "Engineering",
+  
+    // Faculty of Mathematics (Filtered)
+    "Computer Science": "Math",
+    "Mathematics": "Math",
+    "Computing and Financial Management": "Math",
 };
+
+/** Ordered list of program names for signup dropdown (matches leaderboard faculty mapping). */
+export const PROGRAM_OPTIONS = Object.keys(FACULTY_MAP).sort();
 
 export function getFaculty(program: string | null): Faculty | null {
   if (!program) return null;

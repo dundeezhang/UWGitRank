@@ -14,10 +14,13 @@ model Profile {
   username        String? @unique
   githubUsername  String? @map("github_username")
   fullName        String? @map("full_name")
+  firstName       String? @map("first_name")
+  lastName        String? @map("last_name")
   avatarUrl       String? @map("avatar_url")
   email           String?
   isVerified      Boolean @default(false) @map("is_verified")
   program         String?
+  linkedinUrl     String? @map("linkedin_url")
 
   githubMetrics GithubMetrics?
 
