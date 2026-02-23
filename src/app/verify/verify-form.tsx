@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { verifyStudentEmail, verifyOtpCode } from '@/app/auth/actions'
+import { verifyStudentEmail, verifyOtpCode, resendVerificationCode } from '@/app/auth/actions'
 import { OtpInput } from '@/components/ui/otp-input'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,10 +90,8 @@ export function VerifyForm() {
 
     function handleResend() {
         setError(null)
-        const formData = new FormData()
-        formData.set('email', email)
         startTransition(async () => {
-            const result = await verifyStudentEmail(null, formData)
+            const result = await resendVerificationCode(email)
             if (result.error) {
                 setError(result.error)
             } else {

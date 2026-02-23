@@ -117,8 +117,40 @@ export async function verifyStudentEmail(prevState: any, formData: FormData) {
         return { error: error.message }
     }
 
+    // For users already in auth.users (e.g. OAuth), updateUser may not send the email.
+    // Explicitly resend the email_change OTP so the code is delivered.
+    const { error: resendError } = await supabase.auth.resend({
+        type: 'email_change',
+        email,
+    })
+    if (resendError) {
+        console.error('[verifyStudentEmail] resend after updateUser failed:', resendError)
+        // Still return success — updateUser created the pending change; in some configs the email may have been sent
+    }
+
     console.log('[verifyStudentEmail] updateUser success, user email:', data.user?.email)
     return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
+}
+
+/** Resend the 6-digit verification code to the given email. Use after the initial send (respect 60s cooldown on client). */
+export async function resendVerificationCode(email: string) {
+    if (!email || !email.endsWith('@uwaterloo.ca')) {
+        return { error: 'Please enter a valid @uwaterloo.ca email address' }
+    }
+
+    const supabase = await createClient()
+
+    const { error } = await supabase.auth.resend({
+        type: 'email_change',
+        email,
+    })
+
+    if (error) {
+        console.error('[resendVerificationCode] resend error:', error)
+        return { error: error.message }
+    }
+
+    return { success: true, message: 'A new 6-digit code has been sent to your email.' }
 }
 
 export async function verifyOtpCode(email: string, token: string) {

@@ -12,10 +12,13 @@ type PageProps = { searchParams: Promise<{ auth_error?: string }> };
 
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
-  const authErrorMessage =
-    params.auth_error === "signup_required"
-      ? "No account found. Please sign up first."
-      : null;
+  const AUTH_ERROR_MESSAGES: Record<string, string> = {
+    signup_required: "No account found. Please sign up first.",
+    already_verified: "This GitHub account is already verified. Please log in instead.",
+  };
+  const authErrorMessage = params.auth_error
+    ? AUTH_ERROR_MESSAGES[params.auth_error] ?? null
+    : null;
   const supabase = await createClient();
   const {
     data: { user },

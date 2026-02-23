@@ -11,31 +11,35 @@ export async function GET(request: Request) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            // Login path: only allow users with completed signup fields and verified profile.
-            if (next.startsWith('/leaderboard')) {
-                const { data: userData } = await supabase.auth.getUser()
-                const user = userData.user
+            const { data: userData } = await supabase.auth.getUser()
+            const user = userData.user
 
-                let isRegistered = false
-                if (user) {
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('is_verified,first_name,last_name,program')
-                        .eq('id', user.id)
-                        .maybeSingle()
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('is_verified,first_name,last_name,program')
+                    .eq('id', user.id)
+                    .maybeSingle()
 
-                    const hasSignupFields = Boolean(
-                        profile?.first_name?.trim() &&
-                        profile?.last_name?.trim() &&
-                        profile?.program?.trim()
-                    )
-                    const isVerified = Boolean(profile?.is_verified)
-                    isRegistered = hasSignupFields && isVerified
-                }
+                const hasSignupFields = Boolean(
+                    profile?.first_name?.trim() &&
+                    profile?.last_name?.trim() &&
+                    profile?.program?.trim()
+                )
+                const isVerified = Boolean(profile?.is_verified)
+                const isRegistered = hasSignupFields && isVerified
 
-                if (!isRegistered) {
+                // Login path: only allow users with completed signup fields and verified profile.
+                if (next.startsWith('/leaderboard') && !isRegistered) {
                     const redirectUrl = new URL(`${origin}/`)
                     redirectUrl.searchParams.set('auth_error', 'signup_required')
+                    return NextResponse.redirect(redirectUrl.toString())
+                }
+
+                // Sign-up path: block users who are already verified from signing up again.
+                if (next.startsWith('/verify') && isVerified) {
+                    const redirectUrl = new URL(`${origin}/`)
+                    redirectUrl.searchParams.set('auth_error', 'already_verified')
                     return NextResponse.redirect(redirectUrl.toString())
                 }
             }
