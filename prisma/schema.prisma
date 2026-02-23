@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Profiles ──────────────────────────────────────────────────────
+// Keyed to Supabase auth.users.id. Created on first GitHub OAuth sign-in.
+model Profile {
+  id              String  @id @db.Uuid
+  username        String? @unique
+  githubUsername  String? @map("github_username")
+  fullName        String? @map("full_name")
+  avatarUrl       String? @map("avatar_url")
+  email           String?
+  isVerified      Boolean @default(false) @map("is_verified")
+  program         String?
+
+  githubMetrics GithubMetrics?
+
+  @@index([isVerified])
+  @@map("profiles")
+}
+
+// ─── GitHub Metrics ────────────────────────────────────────────────
+// One row per verified user. Upserted by the /api/sync cron route.
+model GithubMetrics {
+  userId     String   @id @map("user_id") @db.Uuid
+  stars      Int      @default(0)
+  commits    Int      @default(0)
+  mergedPrs  Int      @default(0) @map("merged_prs")
+  rankScore  Float    @default(0) @map("rank_score")
+  lastSynced DateTime? @map("last_synced") @db.Timestamptz
+
+  // Time-scoped commit counts
+  commits7d  Int @default(0) @map("commits_7d")
+  commits30d Int @default(0) @map("commits_30d")
+  commits1y  Int @default(0) @map("commits_1y")
+
+  // Time-scoped PR counts
+  prs7d  Int @default(0) @map("prs_7d")
+  prs30d Int @default(0) @map("prs_30d")
+  prs1y  Int @default(0) @map("prs_1y")
+
+  // Time-scoped composite scores
+  score7d  Float @default(0) @map("score_7d")
+  score30d Float @default(0) @map("score_30d")
+  score1y  Float @default(0) @map("score_1y")
+
+  profile Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rankScore(sort: Desc)])
+  @@index([lastSynced])
+  @@map("github_metrics")
+}
+
+// ─── Leaderboard Viewers ───────────────────────────────────────────
+// Tracks GitHub-authenticated users who view rankings but aren't on the board.
+model LeaderboardViewer {
+  githubUsername String   @id @map("github_username")
+  avatarUrl      String?  @map("avatar_url")
+  firstSeenAt    DateTime @default(now()) @map("first_seen_at") @db.Timestamptz
+  lastSeenAt     DateTime @default(now()) @updatedAt @map("last_seen_at") @db.Timestamptz
+
+  @@map("leaderboard_viewers")
+}

@@ -1,122 +1,135 @@
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
-import { CheckCircle2, Trophy, ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import Link from 'next/link'
+import { createClient } from "@/utils/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { CheckCircle2, Trophy, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { ScaleIn, FadeIn } from "@/components/motion";
+import Link from "next/link";
 
 export default async function VerificationSuccessPage() {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    // Session may not have propagated yet (edge case: link opened in a different
-    // browser than the one with the original GitHub session).  The OTP was
-    // already verified and the profile updated by /auth/confirm, so show a
-    // friendly success screen instead of looping back to the landing page.
-    if (!user) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-                <main className="max-w-md w-full animate-in fade-in zoom-in duration-500 text-center space-y-6">
-                    <div className="flex justify-center text-green-500">
-                        <CheckCircle2 className="w-16 h-16" />
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight">Email Verified!</h1>
-                    <p className="text-muted-foreground">
-                        Your @uwaterloo.ca address has been confirmed. Sign in to access the leaderboard.
-                    </p>
-                    <Button asChild className="w-full gap-2 py-6 text-lg">
-                        <Link href="/">Sign In</Link>
-                    </Button>
-                </main>
-            </div>
-        )
-    }
-
-    const email = user.email
-    const isWaterlooEmail = email?.endsWith('@uwaterloo.ca')
-
-    if (isWaterlooEmail) {
-        // 1. Check if profile exists
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', user.id)
-            .single()
-
-        if (profile) {
-            // 2. Update existing profile
-            await supabase
-                .from('profiles')
-                .update({
-                    is_verified: true,
-                    email: email // Sync email to profile in case trigger is missing
-                })
-                .eq('id', user.id)
-        } else {
-            // 3. Create missing profile
-            await supabase
-                .from('profiles')
-                .insert({
-                    id: user.id,
-                    username: user.user_metadata?.user_name || user.user_metadata?.preferred_username || (email || '').split('@')[0],
-                    full_name: user.user_metadata?.full_name,
-                    avatar_url: user.user_metadata?.avatar_url,
-                    email: email,
-                    is_verified: true
-                })
-        }
-    } else {
-        // If they somehow got here without a Waterloo email, send them back to verify
-        return redirect('/verify')
-    }
-
+  // Session may not have propagated yet (edge case: link opened in a different
+  // browser than the one with the original GitHub session).  The OTP was
+  // already verified and the profile updated by /auth/confirm, so show a
+  // friendly success screen instead of looping back to the landing page.
+  if (!user) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-            <main className="max-w-md w-full animate-in fade-in zoom-in duration-500">
-                <div className="text-center mb-8 space-y-2">
-                    <div className="flex justify-center mb-4 text-green-500">
-                        <CheckCircle2 className="w-16 h-16" />
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight">
-                        Verification Successful
-                    </h1>
-                    <p className="text-muted-foreground">
-                        You're now a verified member of the Waterloo GitRank community.
-                    </p>
-                </div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
+        <main className="max-w-md w-full text-center space-y-6">
+          <ScaleIn className="flex justify-center text-green-500">
+            <CheckCircle2 className="w-16 h-16" />
+          </ScaleIn>
+          <FadeIn delay={0.15}>
+            <h1 className="text-3xl font-bold tracking-tight">Email Verified!</h1>
+            <p className="text-muted-foreground mt-2">
+              Your @uwaterloo.ca address has been confirmed. Sign in to access the
+              leaderboard.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.25}>
+            <Button asChild className="w-full gap-2 py-6 text-lg">
+              <Link href="/">Sign In</Link>
+            </Button>
+          </FadeIn>
+        </main>
+      </div>
+    );
+  }
 
-                <Card className="border-border shadow-xl overflow-hidden">
-                    <div className="h-2 bg-green-500" />
-                    <CardHeader>
-                        <CardTitle className="text-xl">Welcome!</CardTitle>
-                        <CardDescription>
-                            Your stats will now be actively synced and displayed on the leaderboard.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="p-4 bg-muted/50 border border-border rounded-lg flex items-center gap-4">
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                                <Trophy className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold">Rankings are live</p>
-                                <p className="text-xs text-muted-foreground">See where you stand on the leaderboard.</p>
-                            </div>
-                        </div>
+  const email = user.email;
+  const isWaterlooEmail = email?.endsWith("@uwaterloo.ca");
 
-                        <Button asChild className="w-full gap-2 py-6 text-lg">
-                            <Link href="/leaderboard">
-                                Go to Leaderboard
-                                <ArrowRight className="w-5 h-5" />
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
+  if (isWaterlooEmail) {
+    // Upsert the profile: create if missing, update if exists
+    await prisma.profile.upsert({
+      where: { id: user.id },
+      create: {
+        id: user.id,
+        username:
+          user.user_metadata?.user_name ||
+          user.user_metadata?.preferred_username ||
+          (email || "").split("@")[0],
+        fullName: user.user_metadata?.full_name as string | undefined,
+        avatarUrl: user.user_metadata?.avatar_url as string | undefined,
+        email: email,
+        isVerified: true,
+      },
+      update: {
+        isVerified: true,
+        email: email,
+      },
+    });
+  } else {
+    // If they somehow got here without a Waterloo email, send them back to verify
+    return redirect("/verify");
+  }
 
-                <p className="text-center mt-8 text-xs text-muted-foreground px-4">
-                    Logged in as <span className="font-medium text-foreground">{email}</span>
-                </p>
-            </main>
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
+      <main className="max-w-md w-full">
+        <div className="text-center mb-8 space-y-2">
+          <ScaleIn className="flex justify-center mb-4 text-green-500">
+            <CheckCircle2 className="w-16 h-16" />
+          </ScaleIn>
+          <FadeIn delay={0.15}>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Verification Successful
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              You're now a verified member of the Waterloo GitRank community.
+            </p>
+          </FadeIn>
         </div>
-    )
+
+        <FadeIn delay={0.25}>
+          <Card className="border-border shadow-xl overflow-hidden">
+          <div className="h-2 bg-green-500" />
+          <CardHeader>
+            <CardTitle className="text-xl">Welcome!</CardTitle>
+            <CardDescription>
+              Your stats will now be actively synced and displayed on the
+              leaderboard.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-muted/50 border border-border rounded-lg flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Rankings are live</p>
+                <p className="text-xs text-muted-foreground">
+                  See where you stand on the leaderboard.
+                </p>
+              </div>
+            </div>
+
+            <Button asChild className="w-full gap-2 py-6 text-lg">
+              <Link href="/leaderboard">
+                Go to Leaderboard
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        </FadeIn>
+
+        <p className="text-center mt-8 text-xs text-muted-foreground px-4">
+          Logged in as{" "}
+          <span className="font-medium text-foreground">{email}</span>
+        </p>
+      </main>
+    </div>
+  );
 }

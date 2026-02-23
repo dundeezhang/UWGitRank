@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { Trophy, Github, Star, GitCommit, Link as LinkIcon, BadgeCheck, ShieldX, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScaleIn, FadeIn, StaggerContainer, StaggerItem } from '@/components/motion'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
@@ -33,13 +34,15 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
             <main className="max-w-4xl mx-auto px-4 py-12 space-y-8">
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-                    <img
-                        src={profile.avatar_url}
-                        alt={profile.username}
-                        className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-card shadow-xl"
-                    />
+                    <ScaleIn>
+                        <img
+                            src={profile.avatar_url}
+                            alt={profile.username}
+                            className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-card shadow-xl"
+                        />
+                    </ScaleIn>
 
-                    <div className="flex-1 space-y-4 text-center md:text-left">
+                    <FadeIn delay={0.1} className="flex-1 space-y-4 text-center md:text-left">
                         <div className="space-y-1">
                             <div className="flex items-center justify-center md:justify-start gap-2">
                                 <h1 className="text-4xl font-bold">{profile.full_name}</h1>
@@ -63,46 +66,52 @@ export default async function ProfilePage({ params }: { params: { username: stri
                                 </a>
                             </Button>
                         </div>
-                    </div>
+                    </FadeIn>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="border-border shadow-sm">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <Star className="w-4 h-4" />
-                                Total Stars
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <span className="text-3xl font-bold">{profile.stars.toLocaleString()}</span>
-                        </CardContent>
-                    </Card>
+                <StaggerContainer stagger={0.1} delay={0.2} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <StaggerItem>
+                        <Card className="border-border shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                    <Star className="w-4 h-4" />
+                                    Total Stars
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <span className="text-3xl font-bold">{profile.stars.toLocaleString()}</span>
+                            </CardContent>
+                        </Card>
+                    </StaggerItem>
 
-                    <Card className="border-border shadow-sm">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <GitCommit className="w-4 h-4" />
-                                Contributions
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <span className="text-3xl font-bold">{profile.commits.toLocaleString()}</span>
-                        </CardContent>
-                    </Card>
+                    <StaggerItem>
+                        <Card className="border-border shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                    <GitCommit className="w-4 h-4" />
+                                    Contributions
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <span className="text-3xl font-bold">{profile.commits.toLocaleString()}</span>
+                            </CardContent>
+                        </Card>
+                    </StaggerItem>
 
-                    <Card className="border-border shadow-sm">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <Users className="w-4 h-4" />
-                                Followers
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <span className="text-3xl font-bold">{profile.followers.toLocaleString()}</span>
-                        </CardContent>
-                    </Card>
-                </div>
+                    <StaggerItem>
+                        <Card className="border-border shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                    <Users className="w-4 h-4" />
+                                    Followers
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <span className="text-3xl font-bold">{profile.followers.toLocaleString()}</span>
+                            </CardContent>
+                        </Card>
+                    </StaggerItem>
+                </StaggerContainer>
             </main>
         </div>
     )

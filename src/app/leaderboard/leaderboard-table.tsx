@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Search, BadgeCheck } from "lucide-react";
 import { Tooltip } from "radix-ui";
 import { Input } from "@/components/ui/input";
@@ -18,13 +19,13 @@ import type {
   RankedEntry,
   TimeWindow,
   Faculty,
-} from "@/lib/leaderboard";
+} from "@/lib/leaderboard-shared";
 import {
   getWindowScore,
   getWindowStats,
   getFaculty,
   TIME_WINDOW_LABELS,
-} from "@/lib/leaderboard";
+} from "@/lib/leaderboard-shared";
 
 export type { LeaderboardEntry };
 
@@ -152,94 +153,112 @@ export function LeaderboardTable({ data }: { data: LeaderboardEntry[] }) {
 
         {/* Podium */}
         {podiumEntries.length > 0 && (
-          <Podium entries={podiumEntries} timeWindow={timeWindow} />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            <Podium entries={podiumEntries} timeWindow={timeWindow} />
+          </motion.div>
         )}
 
         {/* Table (entries after top 3) */}
-        <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-zinc-200 hover:bg-transparent">
-                <TableHead className="w-[72px]">Rank</TableHead>
-                <TableHead>Contributor</TableHead>
-                <TableHead>Program</TableHead>
-                <TableHead className="text-right">Rank Score</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tableEntries.length === 0 ? (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${timeWindow}-${facultyFilter}-${query}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-sm"
+          >
+            <Table>
+              <TableHeader>
                 <TableRow className="border-zinc-200 hover:bg-transparent">
-                  <TableCell
-                    colSpan={4}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    {filtered.length === 0
-                      ? "No contributors found."
-                      : "All contributors shown in the podium above."}
-                  </TableCell>
+                  <TableHead className="w-[72px]">Rank</TableHead>
+                  <TableHead>Contributor</TableHead>
+                  <TableHead>Program</TableHead>
+                  <TableHead className="text-right">Rank Score</TableHead>
                 </TableRow>
-              ) : (
-                tableEntries.map((entry) => {
-                  const stats = getWindowStats(entry, timeWindow);
-
-                  return (
-                    <TableRow
-                      key={entry.username}
-                      className="border-zinc-200 hover:bg-muted/30 transition-colors"
+              </TableHeader>
+              <TableBody>
+                {tableEntries.length === 0 ? (
+                  <TableRow className="border-zinc-200 hover:bg-transparent">
+                    <TableCell
+                      colSpan={4}
+                      className="h-24 text-center text-muted-foreground"
                     >
-                      {/* Rank */}
-                      <TableCell className="font-bold text-lg">
-                        <span className="text-muted-foreground">
-                          {entry.rank}
-                        </span>
-                      </TableCell>
+                      {filtered.length === 0
+                        ? "No contributors found."
+                        : "All contributors shown in the podium above."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  tableEntries.map((entry, i) => {
+                    const stats = getWindowStats(entry, timeWindow);
 
-                      {/* Student */}
-                      <TableCell>
-                        <a
-                          href={`https://github.com/${entry.username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-3 group"
-                        >
-                          <img
-                            src={`https://github.com/${entry.username}.png`}
-                            alt={entry.username}
-                            width={32}
-                            height={32}
-                            className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
-                          />
-                          <span className="font-medium transition-colors group-hover:text-yellow-500 group-hover:underline underline-offset-4">
-                            {entry.username}
+                    return (
+                      <motion.tr
+                        key={entry.username}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: Math.min(i * 0.03, 0.45),
+                          ease: "easeOut",
+                        }}
+                        className="border-b border-zinc-200 hover:bg-muted/30 transition-colors"
+                      >
+                        <TableCell className="font-bold text-lg">
+                          <span className="text-muted-foreground">
+                            {entry.rank}
                           </span>
-                          {entry.is_verified && (
-                            <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
-                          )}
-                        </a>
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Program */}
-                      <TableCell className="text-muted-foreground">
-                        {entry.program ?? "—"}
-                      </TableCell>
+                        <TableCell>
+                          <a
+                            href={`https://github.com/${entry.username}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-3 group"
+                          >
+                            <img
+                              src={`https://github.com/${entry.username}.png`}
+                              alt={entry.username}
+                              width={32}
+                              height={32}
+                              className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
+                            />
+                            <span className="font-medium transition-colors group-hover:text-yellow-500 group-hover:underline underline-offset-4">
+                              {entry.username}
+                            </span>
+                            {entry.is_verified && (
+                              <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
+                            )}
+                          </a>
+                        </TableCell>
 
-                      {/* Score with tooltip */}
-                      <TableCell className="text-right">
-                        <ScoreTooltip
-                          stars={entry.stars}
-                          prs={stats.prs}
-                          commits={stats.commits}
-                          score={stats.score}
-                          timeWindow={timeWindow}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                        <TableCell className="text-muted-foreground">
+                          {entry.program ?? "—"}
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <ScoreTooltip
+                            stars={entry.stars}
+                            prs={stats.prs}
+                            commits={stats.commits}
+                            score={stats.score}
+                            timeWindow={timeWindow}
+                          />
+                        </TableCell>
+                      </motion.tr>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </Tooltip.Provider>
   );

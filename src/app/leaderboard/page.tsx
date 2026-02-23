@@ -1,6 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { fetchLeaderboard } from "@/lib/leaderboard";
 import { Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FadeIn } from "@/components/motion";
 import Link from "next/link";
 import { signOut } from "@/app/auth/actions";
 import { LeaderboardTable } from "./leaderboard-table";
@@ -13,30 +16,7 @@ export default async function LeaderboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data } = await supabase
-    .from("leaderboard")
-    .select(
-      "username, is_verified, program, stars, commits_all, prs_all, score_all, commits_7d, prs_7d, score_7d, commits_30d, prs_30d, score_30d, commits_1y, prs_1y, score_1y"
-    );
-
-  const entries: LeaderboardEntry[] = (data ?? []).map((row) => ({
-    username: row.username as string,
-    is_verified: row.is_verified as boolean,
-    program: row.program as string | null,
-    stars: (row.stars as number) ?? 0,
-    commits_all: (row.commits_all as number) ?? 0,
-    prs_all: (row.prs_all as number) ?? 0,
-    score_all: (row.score_all as number) ?? 0,
-    commits_7d: (row.commits_7d as number) ?? 0,
-    prs_7d: (row.prs_7d as number) ?? 0,
-    score_7d: (row.score_7d as number) ?? 0,
-    commits_30d: (row.commits_30d as number) ?? 0,
-    prs_30d: (row.prs_30d as number) ?? 0,
-    score_30d: (row.score_30d as number) ?? 0,
-    commits_1y: (row.commits_1y as number) ?? 0,
-    prs_1y: (row.prs_1y as number) ?? 0,
-    score_1y: (row.score_1y as number) ?? 0,
-  }));
+  const entries: LeaderboardEntry[] = await fetchLeaderboard();
 
   // Track this user as a viewer if they're authenticated but not on the leaderboard
   if (user) {
@@ -46,36 +26,27 @@ export default async function LeaderboardPage() {
       : false;
 
     if (githubUsername && !isOnLeaderboard) {
-      const now = new Date().toISOString();
-      const { error: insertError } = await supabase
-        .from("leaderboard_viewers")
-        .insert({
-          github_username: githubUsername,
-          avatar_url: user.user_metadata?.avatar_url ?? null,
-          first_seen_at: now,
-          last_seen_at: now,
-        });
-
-      if (insertError?.code === "23505") {
-        await supabase
-          .from("leaderboard_viewers")
-          .update({
-            last_seen_at: now,
-            avatar_url: user.user_metadata?.avatar_url ?? null,
-          })
-          .eq("github_username", githubUsername);
-      }
+      await prisma.leaderboardViewer.upsert({
+        where: { githubUsername },
+        create: {
+          githubUsername,
+          avatarUrl: (user.user_metadata?.avatar_url as string) ?? null,
+        },
+        update: {
+          lastSeenAt: new Date(),
+          avatarUrl: (user.user_metadata?.avatar_url as string) ?? null,
+        },
+      });
     }
   }
 
   const isVerified = user
-    ? (
-        await supabase
-          .from("profiles")
-          .select("is_verified")
-          .eq("id", user.id)
-          .single()
-      ).data?.is_verified ?? false
+    ? ((
+        await prisma.profile.findUnique({
+          where: { id: user.id },
+          select: { isVerified: true },
+        })
+      )?.isVerified ?? false)
     : false;
 
   return (
@@ -100,7 +71,10 @@ export default async function LeaderboardPage() {
             </Link>
             {user && !isVerified && (
               <Link href="/verify">
-                <Button size="sm" className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
+                >
                   Join Rankings
                 </Button>
               </Link>
@@ -117,17 +91,22 @@ export default async function LeaderboardPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Trophy className="w-7 h-7 text-[#EAB308]" />
-            Rankings
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Waterloo student GitHub rankings · scored by stars, PRs &amp; commits
-          </p>
-        </div>
+        <FadeIn>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Trophy className="w-7 h-7 text-[#EAB308]" />
+              Rankings
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Waterloo student GitHub rankings · scored by stars, PRs &amp;
+              commits
+            </p>
+          </div>
+        </FadeIn>
 
-        <LeaderboardTable data={entries} />
+        <FadeIn delay={0.15}>
+          <LeaderboardTable data={entries} />
+        </FadeIn>
       </main>
     </div>
   );

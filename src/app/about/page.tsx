@@ -13,6 +13,7 @@ import {
   Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion";
 
 export default function AboutPage() {
   return (
@@ -34,23 +35,25 @@ export default function AboutPage() {
         </div>
 
         {/* Hero */}
-        <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 bg-zinc-900 text-[#EAB308] text-xs font-mono font-semibold px-3 py-1.5 rounded-full">
-            <Trophy className="w-3.5 h-3.5" />
-            Ranking System Docs
+        <FadeIn>
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 bg-zinc-900 text-[#EAB308] text-xs font-mono font-semibold px-3 py-1.5 rounded-full">
+              <Trophy className="w-3.5 h-3.5" />
+              Ranking System Docs
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight">
+              How the Ranking System Works
+            </h1>
+            <p className="text-zinc-600 text-lg">
+              GitRank scores every verified Waterloo student&apos;s open-source
+              impact using a weighted formula pulled directly from the GitHub API.
+              Here&apos;s exactly how it works.
+            </p>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight">
-            How the Ranking System Works
-          </h1>
-          <p className="text-zinc-600 text-lg">
-            GitRank scores every verified Waterloo student&apos;s open-source
-            impact using a weighted formula pulled directly from the GitHub API.
-            Here&apos;s exactly how it works.
-          </p>
-        </div>
+        </FadeIn>
 
         {/* Score Formula */}
-        <div className="bg-zinc-900 text-white rounded-2xl p-8 space-y-6 shadow-xl">
+        <FadeIn viewOnce className="bg-zinc-900 text-white rounded-2xl p-8 space-y-6 shadow-xl">
           <div className="flex items-center gap-3 text-[#EAB308]">
             <Calculator className="w-5 h-5" />
             <h2 className="text-xl font-bold">The Formula</h2>
@@ -79,15 +82,15 @@ export default function AboutPage() {
             PRs because they reflect external recognition and meaningful
             collaboration.
           </p>
-        </div>
+        </FadeIn>
 
         {/* Metric Breakdown */}
-        <div className="space-y-4">
+        <FadeIn viewOnce className="space-y-4">
           <h2 className="text-2xl font-bold tracking-tight">Metric Breakdown</h2>
 
-          <div className="grid gap-4">
+          <StaggerContainer viewOnce stagger={0.12} className="grid gap-4">
             {/* Stars */}
-            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+            <StaggerItem className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-yellow-600">
                   <Star className="w-5 h-5" />
@@ -108,10 +111,10 @@ export default function AboutPage() {
                 <li>Reflects real-world adoption of your work</li>
                 <li>Highest weight in the formula (≈ 50% of a typical score)</li>
               </ul>
-            </div>
+            </StaggerItem>
 
             {/* PRs */}
-            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+            <StaggerItem className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-blue-600">
                   <GitPullRequest className="w-5 h-5" />
@@ -132,10 +135,10 @@ export default function AboutPage() {
                 <li>Rewards contributions to popular open-source projects</li>
                 <li>Only merged PRs count — open or closed ones do not</li>
               </ul>
-            </div>
+            </StaggerItem>
 
             {/* Commits */}
-            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+            <StaggerItem className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-green-600">
                   <GitCommit className="w-5 h-5" />
@@ -157,12 +160,12 @@ export default function AboutPage() {
                 <li>Lowest individual weight but compounds over time</li>
                 <li>Private repo commits are not counted</li>
               </ul>
-            </div>
-          </div>
-        </div>
+            </StaggerItem>
+          </StaggerContainer>
+        </FadeIn>
 
         {/* Score Example */}
-        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+        <FadeIn viewOnce className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-zinc-100 flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[#EAB308]" />
             <h2 className="font-bold">Example Score Calculation</h2>
@@ -185,10 +188,10 @@ export default function AboutPage() {
               <span className="text-[#EAB308]">9,809</span>
             </div>
           </div>
-        </div>
+        </FadeIn>
 
         {/* Data Sync */}
-        <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+        <FadeIn viewOnce className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
           <div className="flex items-center gap-3 text-zinc-700">
             <RefreshCw className="w-5 h-5" />
             <h2 className="font-bold text-zinc-900">Data Sync &amp; Freshness</h2>
@@ -199,13 +202,13 @@ export default function AboutPage() {
             If you just verified or made a big push, your score will reflect it
             on the next sync.
           </p>
-        </div>
+        </FadeIn>
 
         {/* Who can view / join */}
-        <div className="space-y-4">
+        <FadeIn viewOnce className="space-y-4">
           <h2 className="text-2xl font-bold tracking-tight">Access Tiers</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+          <StaggerContainer viewOnce stagger={0.15} className="grid sm:grid-cols-2 gap-4">
+            <StaggerItem className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
               <div className="flex items-center gap-3 text-zinc-700">
                 <Eye className="w-5 h-5" />
                 <h3 className="font-bold">Viewer</h3>
@@ -216,8 +219,8 @@ export default function AboutPage() {
                 who&apos;s visiting.
               </p>
               <p className="text-xs font-mono text-zinc-400">GitHub OAuth only</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
+            </StaggerItem>
+            <StaggerItem className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-3">
               <div className="flex items-center gap-3 text-[#EAB308]">
                 <ShieldCheck className="w-5 h-5" />
                 <h3 className="font-bold">Ranked Contributor</h3>
@@ -228,12 +231,12 @@ export default function AboutPage() {
                 Your GitHub stats are then synced nightly.
               </p>
               <p className="text-xs font-mono text-zinc-400">GitHub OAuth + UW email</p>
-            </div>
-          </div>
-        </div>
+            </StaggerItem>
+          </StaggerContainer>
+        </FadeIn>
 
         {/* Verification CTA */}
-        <div className="bg-zinc-900 text-white p-8 rounded-2xl space-y-4 shadow-xl">
+        <FadeIn viewOnce className="bg-zinc-900 text-white p-8 rounded-2xl space-y-4 shadow-xl">
           <div className="flex items-center gap-3 text-[#EAB308]">
             <Award className="w-6 h-6" />
             <h3 className="text-xl font-bold">Get on the Board</h3>
@@ -249,7 +252,7 @@ export default function AboutPage() {
           >
             <Link href="/verify">Verify &amp; Join Rankings</Link>
           </Button>
-        </div>
+        </FadeIn>
 
         {/* Footer */}
         <footer className="text-center pt-4">
