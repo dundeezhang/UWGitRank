@@ -5,7 +5,7 @@ import { Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
-import { signOut } from "@/app/auth/actions";
+import { signOut, signInToJoin } from "@/app/auth/actions";
 import { LeaderboardTable } from "./leaderboard-table";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
 import { Github } from "lucide-react";
@@ -92,16 +92,28 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                 How Rankings Work
               </Button>
             </Link>
-            {user && !isVerified && (
+            {!user ? (
+              <form action={signInToJoin}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
+                >
+                  <Github className="w-4 h-4" />
+                  Join Leaderboard
+                </Button>
+              </form>
+            ) : !isVerified ? (
               <Link href="/verify">
                 <Button
                   size="sm"
                   className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
                 >
-                  Join Rankings
+                  <Github className="w-4 h-4" />
+                  Join Leaderboard
                 </Button>
               </Link>
-            )}
+            ) : null}
             {user && (
               <form action={signOut}>
                 <button className="text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
