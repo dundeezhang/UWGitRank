@@ -103,16 +103,59 @@ export async function verifyStudentEmail(prevState: any, formData: FormData) {
         return { error: 'Please enter a valid @uwaterloo.ca email address' }
     }
 
-    const origin = await getOrigin()
     const supabase = await createClient()
-    const { error } = await supabase.auth.updateUser(
-        { email },
-        { emailRedirectTo: `${origin}/auth/confirm?next=/verify/success` }
-    )
+    const { error } = await supabase.auth.updateUser({ email })
 
     if (error) {
         return { error: error.message }
     }
 
-    return { success: true, message: 'Verification email sent! Please check your inbox (and spam folder) to confirm.' }
+    return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
+}
+
+export async function markProfileVerified() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Not authenticated' }
+    }
+
+    const uwEmail = user.email
+    if (!uwEmail?.endsWith('@uwaterloo.ca')) {
+        return { error: 'Email is not a verified @uwaterloo.ca address' }
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single()
+
+    if (profile) {
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                is_verified: true,
+                email: uwEmail,
+            })
+            .eq('id', user.id)
+
+        if (error) return { error: error.message }
+    } else {
+        const { error } = await supabase
+            .from('profiles')
+            .insert({
+                id: user.id,
+                username: user.user_metadata?.user_name || user.user_metadata?.preferred_username || uwEmail.split('@')[0],
+                full_name: user.user_metadata?.full_name,
+                avatar_url: user.user_metadata?.avatar_url,
+                email: uwEmail,
+                is_verified: true,
+            })
+
+        if (error) return { error: error.message }
+    }
+
+    return { success: true }
 }

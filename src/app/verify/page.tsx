@@ -52,7 +52,7 @@ export default async function VerifyStudentPage() {
                     <CardHeader>
                         <CardTitle className="text-xl">Step 2: University Email</CardTitle>
                         <CardDescription>
-                            We need to confirm you are a Waterloo student. Enter your official email below.
+                            We need to confirm you are a Waterloo student. Enter your email below to receive a verification code.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

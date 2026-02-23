@@ -1,44 +1,191 @@
 'use client'
 
-import { useActionState } from 'react'
-import { verifyStudentEmail } from '@/app/auth/actions'
+import { useState, useEffect, useTransition, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { verifyStudentEmail, markProfileVerified } from '@/app/auth/actions'
+import { createClient } from '@/utils/supabase/client'
+import { OtpInput } from '@/components/ui/otp-input'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Mail, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Mail, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
 
-type FormState = {
-    error?: string;
-    success?: boolean;
-    message?: string;
-};
-
-const initialState: FormState = {};
+type Step = 'email_entry' | 'otp_entry'
 
 export function VerifyForm() {
-    const [state, formAction, isPending] = useActionState(verifyStudentEmail, initialState)
+    const router = useRouter()
+    const [step, setStep] = useState<Step>('email_entry')
+    const [email, setEmail] = useState('')
+    const [otpValue, setOtpValue] = useState('')
+    const [error, setError] = useState<string | null>(null)
+    const [isSubmitting, startTransition] = useTransition()
+    const [resendCooldown, setResendCooldown] = useState(0)
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const hasAutoSubmitted = useRef(false)
 
-    if (state.success) {
+    function startResendCooldown() {
+        setResendCooldown(60)
+        if (cooldownRef.current) clearInterval(cooldownRef.current)
+        cooldownRef.current = setInterval(() => {
+            setResendCooldown((prev) => {
+                if (prev <= 1) {
+                    if (cooldownRef.current) clearInterval(cooldownRef.current)
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (cooldownRef.current) clearInterval(cooldownRef.current)
+        }
+    }, [])
+
+    // Auto-submit when all 6 digits are entered
+    useEffect(() => {
+        if (otpValue.length === 6 && step === 'otp_entry' && !isSubmitting && !hasAutoSubmitted.current) {
+            hasAutoSubmitted.current = true
+            handleOtpSubmit()
+        }
+        if (otpValue.length < 6) {
+            hasAutoSubmitted.current = false
+        }
+    }, [otpValue, step, isSubmitting])
+
+    function handleEmailSubmit(formData: FormData) {
+        setError(null)
+        startTransition(async () => {
+            const result = await verifyStudentEmail(null, formData)
+            if (result.error) {
+                setError(result.error)
+            } else if (result.success && result.email) {
+                setEmail(result.email)
+                setStep('otp_entry')
+                startResendCooldown()
+            }
+        })
+    }
+
+    function handleOtpSubmit() {
+        if (otpValue.length !== 6) return
+        setError(null)
+        startTransition(async () => {
+            const supabase = createClient()
+            const { error: otpError } = await supabase.auth.verifyOtp({
+                email,
+                token: otpValue,
+                type: 'email_change',
+            })
+
+            if (otpError) {
+                setError(
+                    otpError.message === 'Token has expired or is invalid'
+                        ? 'Invalid or expired code. Please try again.'
+                        : otpError.message
+                )
+                setOtpValue('')
+                return
+            }
+
+            const profileResult = await markProfileVerified()
+            if (profileResult.error) {
+                setError(profileResult.error)
+                return
+            }
+
+            router.push('/dashboard')
+        })
+    }
+
+    function handleResend() {
+        setError(null)
+        const formData = new FormData()
+        formData.set('email', email)
+        startTransition(async () => {
+            const result = await verifyStudentEmail(null, formData)
+            if (result.error) {
+                setError(result.error)
+            } else {
+                setOtpValue('')
+                startResendCooldown()
+            }
+        })
+    }
+
+    if (step === 'otp_entry') {
         return (
-            <div className="flex flex-col items-center gap-4 p-6 text-center animate-in fade-in zoom-in duration-300">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-500">
-                    <CheckCircle2 className="w-10 h-10" />
-                </div>
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">Check your inbox</h3>
+            <div className="space-y-6">
+                <div className="text-center space-y-1">
                     <p className="text-sm text-muted-foreground">
-                        {state.message}
+                        Enter the 6-digit code sent to
                     </p>
+                    <p className="font-medium text-sm">{email}</p>
                 </div>
-                <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>
-                    Didn't get it? Try again.
+
+                <OtpInput
+                    value={otpValue}
+                    onChange={setOtpValue}
+                    disabled={isSubmitting}
+                    error={!!error}
+                    autoFocus
+                />
+
+                {error && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2 text-sm text-destructive animate-in slide-in-from-top-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        {error}
+                    </div>
+                )}
+
+                <Button
+                    onClick={handleOtpSubmit}
+                    className="w-full gap-2"
+                    disabled={isSubmitting || otpValue.length !== 6}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Verifying...
+                        </>
+                    ) : (
+                        'Verify Code'
+                    )}
                 </Button>
+
+                <div className="flex items-center justify-between">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            setStep('email_entry')
+                            setOtpValue('')
+                            setError(null)
+                        }}
+                        disabled={isSubmitting}
+                        className="gap-1 text-muted-foreground"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Change email
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleResend}
+                        disabled={isSubmitting || resendCooldown > 0}
+                        className="text-muted-foreground"
+                    >
+                        {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                    </Button>
+                </div>
             </div>
         )
     }
 
     return (
-        <form action={formAction} className="space-y-4">
+        <form action={handleEmailSubmit} className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="email">Waterloo Email</Label>
                 <div className="relative">
@@ -50,7 +197,8 @@ export function VerifyForm() {
                         placeholder="yourname@uwaterloo.ca"
                         className="pl-10"
                         required
-                        disabled={isPending}
+                        disabled={isSubmitting}
+                        defaultValue={email}
                     />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -58,21 +206,21 @@ export function VerifyForm() {
                 </p>
             </div>
 
-            {state.error && (
+            {error && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md flex items-center gap-2 text-sm text-destructive animate-in slide-in-from-top-2">
                     <AlertCircle className="w-4 h-4 shrink-0" />
-                    {state.error}
+                    {error}
                 </div>
             )}
 
-            <Button type="submit" className="w-full gap-2" disabled={isPending}>
-                {isPending ? (
+            <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
+                {isSubmitting ? (
                     <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Sending Link...
+                        Sending Code...
                     </>
                 ) : (
-                    'Send Verification Link'
+                    'Send Verification Code'
                 )}
             </Button>
         </form>
