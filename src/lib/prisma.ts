@@ -9,6 +9,8 @@ function createPrismaClient() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL environment variable is not set");
   }
+  // Supabase pooler: username must be postgres.[PROJECT_REF], not just "postgres",
+  // or you get "Tenant or user not found". Use the connection string from the dashboard.
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
   return new PrismaClient({
     adapter,

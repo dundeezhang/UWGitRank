@@ -20,6 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Database (Supabase)
+
+If you see **"Tenant or user not found"** in logs when using the connection pooler, your `DATABASE_URL` username format is wrong.
+
+Supabase's pooler requires the **username to include the project ref**:
+
+- **Correct:** `postgres.[PROJECT_REF]` (e.g. `postgres.htnzmjxayxdeqrtispvf`)
+- **Wrong:** `postgres` alone
+
+Use the **Session** or **Transaction** connection string from **Supabase → Project Settings → Database**. It will look like:
+
+```
+postgresql://postgres.[PROJECT_REF]:[PASSWORD]@[HOST].pooler.supabase.com:[PORT]/postgres
+```
+
+- Session mode: port **5432**
+- Transaction mode: port **6543**
+
+Copy the full string from the dashboard (don't build it by hand) and set it as `DATABASE_URL` in Vercel (or your host) so production uses the same format.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
