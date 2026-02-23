@@ -87,22 +87,34 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("is_verified")
+      .select("is_verified,first_name,last_name,program")
       .eq("id", user.id)
       .single();
 
-    const isVerified = profile?.is_verified;
+    const isVerified = Boolean(profile?.is_verified);
+    const hasSignupFields = Boolean(
+      profile?.first_name?.trim() &&
+      profile?.last_name?.trim() &&
+      profile?.program?.trim(),
+    );
+    const isRegistered = hasSignupFields && isVerified;
+
+    if (!isRegistered && isLeaderboard) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      url.searchParams.set("auth_error", "signup_required");
+      return NextResponse.redirect(url);
+    }
 
     // If verified, redirect AWAY from /verify paths (except /verify/success)
-    if (isVerified && isVerifyPage && !isVerifySuccess) {
+    if (isRegistered && isVerifyPage && !isVerifySuccess) {
       const url = request.nextUrl.clone();
       url.pathname = "/leaderboard";
       return NextResponse.redirect(url);
     }
 
-    // Unverified users can access: landing, verify pages, and leaderboard (as viewers).
-    // Any other protected route redirects them to /verify.
-    if (!isVerified && !isVerifyPage && !isLandingPage && !isLeaderboard) {
+    // Users who have not completed signup+verification can only use landing/verify/about/auth paths.
+    if (!isRegistered && !isVerifyPage && !isLandingPage) {
       const url = request.nextUrl.clone();
       url.pathname = "/verify";
       return NextResponse.redirect(url);

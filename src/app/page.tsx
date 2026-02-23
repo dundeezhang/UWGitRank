@@ -1,53 +1,41 @@
 import { signOut, signInToView } from "./auth/actions";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { syncSingleUser } from "@/lib/sync-user";
 import { ArrowRight, Github, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AboutModal } from "@/components/AboutModal";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
-import RunningCat from "@/components/RunningCat";
 import { JoinLeaderboardDialog } from "@/components/JoinLeaderboardDialog";
 
-export default async function Home() {
+type PageProps = { searchParams: Promise<{ auth_error?: string }> };
+
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const authErrorMessage =
+    params.auth_error === "signup_required"
+      ? "No account found. Please sign up first."
+      : null;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  let isVerified = false;
+  let isRegistered = false;
 
   if (user) {
     try {
       const profile = await prisma.profile.findUnique({
         where: { id: user.id },
-        select: { isVerified: true },
+        select: { isVerified: true, firstName: true, lastName: true, program: true },
       });
-
-      const githubUsername = (user.user_metadata?.user_name || user.user_metadata?.preferred_username) as string | undefined;
-      const isWaterlooEmail = user.email?.endsWith("@uwaterloo.ca");
-      if (isWaterlooEmail && profile && !profile.isVerified) {
-        await prisma.profile.update({
-          where: { id: user.id },
-          data: { isVerified: true, email: user.email, githubUsername },
-        });
-        isVerified = true;
-
-        // Sync GitHub data immediately so user appears on leaderboard
-        if (githubUsername) {
-          try {
-            await syncSingleUser(user.id, githubUsername);
-          } catch (err) {
-            console.error('[home] Auto-verify sync failed:', err);
-          }
-        }
-      } else {
-        isVerified = profile?.isVerified ?? false;
-      }
+      const hasSignupFields = Boolean(
+        profile?.firstName?.trim() &&
+        profile?.lastName?.trim() &&
+        profile?.program?.trim(),
+      );
+      isRegistered = hasSignupFields && Boolean(profile?.isVerified);
     } catch (err) {
-      console.error('[home] Profile check/update failed:', err);
-      // Continue rendering with isVerified=false rather than crashing the page
+      console.error("[home] Failed to check registration status:", err);
     }
   }
 
@@ -75,9 +63,17 @@ export default async function Home() {
           <p className="text-zinc-500 text-lg">Check your Open-Source Aura.</p>
         </FadeIn>
 
+        {authErrorMessage && (
+          <FadeIn delay={0.15}>
+            <div className="w-full max-w-md rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {authErrorMessage}
+            </div>
+          </FadeIn>
+        )}
+
         {/* Actions */}
         <FadeIn delay={0.2}>
-          {user ? (
+          {user && isRegistered ? (
             <div className="flex flex-col items-center gap-5 w-full">
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <Button
@@ -99,29 +95,41 @@ export default async function Home() {
               </form>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <JoinLeaderboardDialog signInToView={signInToView}>
-                <Button
-                  type="button"
-                  size="lg"
-                  className="h-14 px-8 rounded-lg bg-[#EAB308] text-black hover:bg-[#D9A307] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
+            <div className="flex flex-col items-center gap-5 w-full">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <JoinLeaderboardDialog
+                  signInToView={signInToView}
+                  authErrorMessage={authErrorMessage}
                 >
-                  <Github className="w-5 h-5" />
-                  Join the Leaderboard
-                </Button>
-              </JoinLeaderboardDialog>
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="h-14 px-8 rounded-lg bg-[#EAB308] text-black hover:bg-[#D9A307] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
+                  >
+                    <Github className="w-5 h-5" />
+                    Join the Leaderboard
+                  </Button>
+                </JoinLeaderboardDialog>
 
-              <Button
-                asChild
-                size="lg"
-                className="h-14 px-8 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 shadow-[0_0_0_3px_#EAB308] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
-              >
-                <Link href="/leaderboard">
-                  <Trophy className="w-5 h-5 text-[#EAB308]" />
-                  View Leaderboard
-                  <ArrowRight className="w-5 h-5 opacity-70" />
-                </Link>
-              </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-14 px-8 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 shadow-[0_0_0_3px_#EAB308] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
+                >
+                  <Link href="/leaderboard">
+                    <Trophy className="w-5 h-5 text-[#EAB308]" />
+                    View Leaderboard
+                    <ArrowRight className="w-5 h-5 opacity-70" />
+                  </Link>
+                </Button>
+              </div>
+              {user && (
+                <form action={signOut}>
+                  <button className="text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
+                    Sign out of {user.user_metadata.user_name}
+                  </button>
+                </form>
+              )}
             </div>
           )}
         </FadeIn>

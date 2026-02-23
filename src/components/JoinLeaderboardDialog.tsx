@@ -19,11 +19,13 @@ const selectClassName =
 
 interface JoinLeaderboardDialogProps {
   signInToView: () => void
+  authErrorMessage?: string | null
   children: React.ReactNode
 }
 
 export function JoinLeaderboardDialog({
   signInToView,
+  authErrorMessage,
   children,
 }: JoinLeaderboardDialogProps) {
   const [open, setOpen] = useState(false)
@@ -138,6 +140,12 @@ export function JoinLeaderboardDialog({
 
           {step === 'choose' && (
             <div className="flex flex-col gap-3">
+              {authErrorMessage && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-sm text-red-800">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {authErrorMessage}
+                </div>
+              )}
               <form action={signInToView}>
                 <Button
                   type="submit"

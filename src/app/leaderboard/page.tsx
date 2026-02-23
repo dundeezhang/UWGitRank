@@ -12,11 +12,15 @@ import { Github } from "lucide-react";
 import { VerificationSuccessBanner } from "./verification-success-banner";
 import { JoinLeaderboardDialog } from "@/components/JoinLeaderboardDialog";
 
-type PageProps = { searchParams: Promise<{ verified?: string }> };
+type PageProps = { searchParams: Promise<{ verified?: string; auth_error?: string }> };
 
 export default async function LeaderboardPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const showVerifiedSuccess = params.verified === "1";
+  const authErrorMessage =
+    params.auth_error === "signup_required"
+      ? "No account found. Please sign up first."
+      : null;
   const supabase = await createClient();
 
   let user = null;
@@ -60,16 +64,21 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
     }
   }
 
-  let isVerified = false;
+  let isRegistered = false;
   if (user) {
     try {
       const profile = await prisma.profile.findUnique({
         where: { id: user.id },
-        select: { isVerified: true },
+        select: { isVerified: true, firstName: true, lastName: true, program: true },
       });
-      isVerified = profile?.isVerified ?? false;
+      const hasSignupFields = Boolean(
+        profile?.firstName?.trim() &&
+        profile?.lastName?.trim() &&
+        profile?.program?.trim(),
+      );
+      isRegistered = hasSignupFields && Boolean(profile?.isVerified);
     } catch {
-      // Profile check failed — default to unverified
+      // Profile check failed — default to unregistered
     }
   }
 
@@ -93,8 +102,11 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                 How Rankings Work
               </Button>
             </Link>
-            {(!user || !isVerified) ? (
-              <JoinLeaderboardDialog signInToView={signInToView}>
+            {(!user || !isRegistered) ? (
+              <JoinLeaderboardDialog
+                signInToView={signInToView}
+                authErrorMessage={authErrorMessage}
+              >
                 <Button
                   type="button"
                   size="sm"
