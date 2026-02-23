@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { prisma } from "@/lib/prisma";
+import { syncSingleUser } from "@/lib/sync-user";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -49,13 +50,34 @@ export async function GET(request: NextRequest) {
       // Mark profile as verified now that the @uwaterloo.ca email is confirmed.
       if (data.user) {
         const verifiedEmail = data.user.email;
-        await prisma.profile.update({
+        const githubUsername = (data.user.user_metadata?.user_name || data.user.user_metadata?.preferred_username) as string | undefined;
+
+        await prisma.profile.upsert({
           where: { id: data.user.id },
-          data: {
+          create: {
+            id: data.user.id,
+            username: githubUsername || verifiedEmail?.split('@')[0] || 'unknown',
+            githubUsername,
+            fullName: data.user.user_metadata?.full_name as string | undefined,
+            avatarUrl: data.user.user_metadata?.avatar_url as string | undefined,
+            email: verifiedEmail,
+            isVerified: true,
+          },
+          update: {
             isVerified: true,
             email: verifiedEmail,
+            githubUsername,
           },
         });
+
+        // Immediately sync GitHub data so user appears on leaderboard
+        if (githubUsername) {
+          try {
+            await syncSingleUser(data.user.id, githubUsername);
+          } catch (err) {
+            console.error('[auth/confirm] Sync failed:', err);
+          }
+        }
       }
 
       // Attach the new session tokens to the redirect so the browser is

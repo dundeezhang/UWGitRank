@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { syncSingleUser } from "@/lib/sync-user";
 import { redirect } from "next/navigation";
 import { CheckCircle2, Trophy, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,16 +51,16 @@ export default async function VerificationSuccessPage() {
   const email = user.email;
   const isWaterlooEmail = email?.endsWith("@uwaterloo.ca");
 
+  const githubUsername = (user.user_metadata?.user_name || user.user_metadata?.preferred_username) as string | undefined;
+
   if (isWaterlooEmail) {
     // Upsert the profile: create if missing, update if exists
     await prisma.profile.upsert({
       where: { id: user.id },
       create: {
         id: user.id,
-        username:
-          user.user_metadata?.user_name ||
-          user.user_metadata?.preferred_username ||
-          (email || "").split("@")[0],
+        username: githubUsername || (email || "").split("@")[0],
+        githubUsername,
         fullName: user.user_metadata?.full_name as string | undefined,
         avatarUrl: user.user_metadata?.avatar_url as string | undefined,
         email: email,
@@ -68,8 +69,18 @@ export default async function VerificationSuccessPage() {
       update: {
         isVerified: true,
         email: email,
+        githubUsername,
       },
     });
+
+    // Sync GitHub data so user appears on leaderboard immediately
+    if (githubUsername) {
+      try {
+        await syncSingleUser(user.id, githubUsername);
+      } catch (err) {
+        console.error('[verify/success] Sync failed:', err);
+      }
+    }
   } else {
     // If they somehow got here without a Waterloo email, send them back to verify
     return redirect("/verify");

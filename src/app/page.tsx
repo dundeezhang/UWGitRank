@@ -1,6 +1,7 @@
 import { signOut, signInToJoin } from "./auth/actions";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { syncSingleUser } from "@/lib/sync-user";
 import { ArrowRight, Github, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AboutModal } from "@/components/AboutModal";
@@ -22,13 +23,23 @@ export default async function Home() {
       select: { isVerified: true },
     });
 
+    const githubUsername = (user.user_metadata?.user_name || user.user_metadata?.preferred_username) as string | undefined;
     const isWaterlooEmail = user.email?.endsWith("@uwaterloo.ca");
     if (isWaterlooEmail && profile && !profile.isVerified) {
       await prisma.profile.update({
         where: { id: user.id },
-        data: { isVerified: true, email: user.email },
+        data: { isVerified: true, email: user.email, githubUsername },
       });
       isVerified = true;
+
+      // Sync GitHub data immediately so user appears on leaderboard
+      if (githubUsername) {
+        try {
+          await syncSingleUser(user.id, githubUsername);
+        } catch (err) {
+          console.error('[home] Auto-verify sync failed:', err);
+        }
+      }
     } else {
       isVerified = profile?.isVerified ?? false;
     }

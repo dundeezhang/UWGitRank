@@ -83,7 +83,7 @@ export function VerifyForm() {
                 return
             }
 
-            router.push('/dashboard')
+            router.push('/leaderboard')
         })
     }
 
