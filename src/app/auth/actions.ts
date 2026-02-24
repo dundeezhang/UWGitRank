@@ -1,10 +1,11 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createClient, createAdminClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers, cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { syncSingleUser } from '@/lib/sync-user'
+import { generateOtp, sendOtpEmail } from '@/lib/email'
 
 const SIGNUP_PENDING_COOKIE = 'signup_pending'
 
@@ -234,40 +235,30 @@ export async function verifyStudentEmail(prevState: any, formData: FormData) {
     const emailAlreadyMatches = currentEmail === targetEmail
     const emailConfirmed = Boolean(userData.user.email_confirmed_at)
 
-    // If GitHub already authenticated this exact UW email, no email-change OTP will be sent.
-    // Complete verification immediately instead of blocking the user waiting for a code.
     if (emailAlreadyMatches && emailConfirmed) {
         const finalized = await finalizeVerifiedUser(userData.user)
         if (finalized.error) return finalized
         return { success: true, email, autoVerified: true }
     }
 
-    console.log('[verifyStudentEmail] Sending OTP to:', email, 'for user:', userData.user.id, 'currentEmail:', userData.user.email ?? null)
-    const { data: updateData, error } = await supabase.auth.updateUser({ email })
-    if (error) {
-        console.error('[verifyStudentEmail] updateUser error:', error)
-        return { error: normalizeOtpSendError(error.message) }
+    const userId = userData.user.id
+    const code = generateOtp()
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
+    // Remove any existing codes for this user+email, then insert the new one
+    await prisma.emailVerification.deleteMany({ where: { userId, email: targetEmail } })
+    await prisma.emailVerification.create({ data: { userId, email: targetEmail, code, expiresAt } })
+
+    try {
+        console.log('[verifyStudentEmail] Sending OTP to:', targetEmail, 'for user:', userId)
+        await sendOtpEmail(targetEmail, code)
+        console.log('[verifyStudentEmail] OTP email sent successfully to:', targetEmail)
+    } catch (err) {
+        console.error('[verifyStudentEmail] Failed to send OTP email:', err)
+        return { error: 'Failed to send verification email. Please try again.' }
     }
 
-    const updatedUser = updateData.user
-    const pendingNewEmail = updatedUser?.new_email?.toLowerCase()
-    const sentAt = updatedUser?.email_change_sent_at ?? null
-    console.log('[verifyStudentEmail] updateUser success:', {
-        userId: updatedUser?.id ?? null,
-        email: updatedUser?.email ?? null,
-        newEmail: updatedUser?.new_email ?? null,
-        emailChangeSentAt: sentAt,
-    })
-
-    // If Supabase accepted the request but did not create an email-change target,
-    // surface it as a hard error instead of claiming success.
-    if (pendingNewEmail !== targetEmail) {
-        return {
-            error: 'Verification email was not queued. Please sign out and log back in with GitHub, then try again.',
-        }
-    }
-
-    return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
+    return { success: true, email: targetEmail, message: 'A 6-digit verification code has been sent to your email.' }
 }
 
 /** Resend the 6-digit verification code using the authenticated user session. */
@@ -282,20 +273,21 @@ export async function resendVerificationCode(email: string) {
         return { error: 'Your session is invalid. Please sign out and log in with GitHub again.' }
     }
 
-    const { data, error } = await supabase.auth.resend({
-        type: 'email_change',
-        email,
-    })
-    if (error) {
-        console.error('[resendVerificationCode] resend error:', error)
-        return { error: normalizeOtpSendError(error.message) }
+    const userId = userData.user.id
+    const targetEmail = email.toLowerCase()
+    const code = generateOtp()
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
+
+    await prisma.emailVerification.deleteMany({ where: { userId, email: targetEmail } })
+    await prisma.emailVerification.create({ data: { userId, email: targetEmail, code, expiresAt } })
+
+    try {
+        console.log('[resendVerificationCode] Sending OTP to:', targetEmail, 'for user:', userId)
+        await sendOtpEmail(targetEmail, code)
+    } catch (err) {
+        console.error('[resendVerificationCode] Failed to send OTP email:', err)
+        return { error: 'Failed to send verification email. Please try again.' }
     }
-    console.log('[resendVerificationCode] resend success:', {
-        userId: userData.user.id,
-        currentEmail: userData.user.email ?? null,
-        targetEmail: email,
-        hasMessageId: Boolean((data as { message_id?: string } | null)?.message_id),
-    })
 
     return { success: true, message: 'A new 6-digit code has been sent to your email.' }
 }
@@ -305,28 +297,52 @@ export async function verifyOtpCode(email: string, token: string) {
         return { error: 'Invalid code' }
     }
 
-    // Get the user ID from the session first
     const supabase = await createClient()
     const { data: sessionData, error: sessionError } = await supabase.auth.getUser()
     if (sessionError || !sessionData.user) {
         return { error: 'Your session is invalid. Please sign out and log in with GitHub again.' }
     }
 
-    const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email_change',
+    const userId = sessionData.user.id
+    const targetEmail = email.toLowerCase()
+
+    const record = await prisma.emailVerification.findFirst({
+        where: { userId, email: targetEmail },
+        orderBy: { createdAt: 'desc' },
     })
 
-    if (error) {
-        console.error('[verifyOtpCode] verifyOtp error:', error)
-        return { error: error.message }
+    if (!record) {
+        return { error: 'No verification code found. Please request a new one.' }
     }
 
-    const user = data.user
-    if (!user) {
-        return { error: 'Verification succeeded but no user returned' }
+    if (new Date() > record.expiresAt) {
+        await prisma.emailVerification.delete({ where: { id: record.id } })
+        return { error: 'Code has expired. Please request a new one.' }
     }
 
-    return finalizeVerifiedUser(user)
+    if (record.code !== token) {
+        return { error: 'Invalid code. Please try again.' }
+    }
+
+    // Code is valid — clean up and update the user's email in Supabase auth
+    await prisma.emailVerification.deleteMany({ where: { userId, email: targetEmail } })
+
+    const admin = createAdminClient()
+    const { error: adminError } = await admin.auth.admin.updateUserById(userId, {
+        email: targetEmail,
+        email_confirm: true,
+    })
+    if (adminError) {
+        console.error('[verifyOtpCode] admin updateUser error:', adminError)
+        return { error: 'Verification succeeded but failed to update your account. Please try again.' }
+    }
+
+    // Re-fetch the user to get updated metadata
+    const { data: updatedUser, error: fetchError } = await admin.auth.admin.getUserById(userId)
+    if (fetchError || !updatedUser.user) {
+        console.error('[verifyOtpCode] Failed to fetch updated user:', fetchError)
+        return { error: 'Verification succeeded but failed to load your profile. Please try again.' }
+    }
+
+    return finalizeVerifiedUser(updatedUser.user)
 }

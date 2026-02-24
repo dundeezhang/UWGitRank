@@ -60,6 +60,20 @@ model GithubMetrics {
   @@map("github_metrics")
 }
 
+// ─── Email Verification Codes ─────────────────────────────────────
+// Stores OTP codes sent directly via nodemailer (bypassing Supabase GoTrue emails).
+model EmailVerification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id") @db.Uuid
+  email     String
+  code      String
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, email])
+  @@map("email_verifications")
+}
+
 // ─── Leaderboard Viewers ───────────────────────────────────────────
 // Tracks GitHub-authenticated users who view rankings but aren't on the board.
 model LeaderboardViewer {
