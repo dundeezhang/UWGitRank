@@ -237,7 +237,17 @@ export function LeaderboardTable({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <Podium entries={podiumEntries} timeWindow={timeWindow} />
+            <Podium
+              entries={podiumEntries}
+              timeWindow={timeWindow}
+              endorsedSet={endorsedSet}
+              currentUserUsername={currentUserUsername}
+              isVerified={isVerified}
+              onEndorse={(username) => {
+                const entry = podiumEntries.find((e) => e.username === username);
+                if (entry) handleEndorse(username, getEffectiveCount(entry));
+              }}
+            />
           </motion.div>
         )}
 

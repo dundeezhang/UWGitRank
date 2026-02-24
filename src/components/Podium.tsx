@@ -19,10 +19,16 @@ function PodiumCard({
   entry,
   place,
   timeWindow,
+  isEndorsed,
+  canEndorse,
+  onEndorse,
 }: {
   entry: RankedEntry;
   place: number;
   timeWindow: TimeWindow;
+  isEndorsed: boolean;
+  canEndorse: boolean;
+  onEndorse: () => void;
 }) {
   const style = PLACE_STYLES[place];
   const stats = getWindowStats(entry, timeWindow);
@@ -67,12 +73,28 @@ function PodiumCard({
             <div className="text-xs font-mono font-semibold mt-0.5 tabular-nums">
               {stats.score.toLocaleString()} pts
             </div>
-            {(Number(entry.endorsement_count) || 0) > 0 && (
-              <div className="flex items-center justify-center gap-0.5 mt-0.5 text-[10px] text-pink-500">
-                <Heart className="h-2.5 w-2.5 fill-pink-500" />
-                <span className="tabular-nums">{entry.endorsement_count}</span>
-              </div>
-            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (canEndorse) onEndorse();
+              }}
+              disabled={!canEndorse}
+              className={`mt-1 inline-flex items-center justify-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium transition-all ${
+                canEndorse
+                  ? isEndorsed
+                    ? "bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100 cursor-pointer"
+                    : "bg-white/80 text-zinc-500 border border-zinc-200 hover:bg-pink-50 hover:text-pink-500 cursor-pointer"
+                  : "text-zinc-400 border border-zinc-100 bg-white/50 cursor-default"
+              }`}
+              aria-label={isEndorsed ? "Remove endorsement" : "Endorse"}
+            >
+              <Heart
+                className={`h-2.5 w-2.5 transition-colors ${
+                  isEndorsed ? "fill-pink-500 text-pink-500" : ""
+                }`}
+              />
+              <span className="tabular-nums">{Number(entry.endorsement_count) || 0}</span>
+            </button>
           </div>
 
           {/* Pedestal */}
@@ -112,9 +134,17 @@ function PodiumCard({
 export function Podium({
   entries,
   timeWindow,
+  endorsedSet,
+  currentUserUsername,
+  isVerified,
+  onEndorse,
 }: {
   entries: RankedEntry[];
   timeWindow: TimeWindow;
+  endorsedSet: Set<string>;
+  currentUserUsername?: string;
+  isVerified: boolean;
+  onEndorse: (username: string) => void;
 }) {
   if (entries.length === 0) return null;
 
@@ -122,21 +152,30 @@ export function Podium({
   const second = entries.length > 1 ? entries[1] : null;
   const third = entries.length > 2 ? entries[2] : null;
 
+  function cardProps(entry: RankedEntry) {
+    const isCurrentUser = currentUserUsername === entry.username;
+    return {
+      isEndorsed: endorsedSet.has(entry.username),
+      canEndorse: isVerified && !isCurrentUser && !!currentUserUsername,
+      onEndorse: () => onEndorse(entry.username),
+    };
+  }
+
   return (
     <div className="flex items-end justify-center gap-3 sm:gap-6 pt-4 pb-2">
       {/* 2nd place — left */}
       {second ? (
-        <PodiumCard entry={second} place={2} timeWindow={timeWindow} />
+        <PodiumCard entry={second} place={2} timeWindow={timeWindow} {...cardProps(second)} />
       ) : (
         <div className="w-24 sm:w-28" />
       )}
 
       {/* 1st place — center */}
-      <PodiumCard entry={first} place={1} timeWindow={timeWindow} />
+      <PodiumCard entry={first} place={1} timeWindow={timeWindow} {...cardProps(first)} />
 
       {/* 3rd place — right */}
       {third ? (
-        <PodiumCard entry={third} place={3} timeWindow={timeWindow} />
+        <PodiumCard entry={third} place={3} timeWindow={timeWindow} {...cardProps(third)} />
       ) : (
         <div className="w-24 sm:w-28" />
       )}
