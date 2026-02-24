@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, BadgeCheck, Linkedin } from "lucide-react";
+import { Search, BadgeCheck } from "lucide-react";
 import { Tooltip } from "radix-ui";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Podium } from "@/components/Podium";
+import { LeaderboardTooltipContent } from "@/components/LeaderboardTooltipContent";
 import type {
   LeaderboardEntry,
   RankedEntry,
@@ -32,8 +33,18 @@ export type { LeaderboardEntry };
 const FACULTIES: Faculty[] = [
   "Engineering",
   "Math",
+  "Environment",
+  "Health",
   "Other",
 ];
+
+const FACULTY_LABELS: Record<Faculty, string> = {
+  Engineering: "Faculty of Engineering",
+  Math: "Faculty of Mathematics",
+  Environment: "Faculty of Environment",
+  Health: "Faculty of Health",
+  Other: "Other",
+};
 
 const TIME_WINDOWS: TimeWindow[] = ["7d", "30d", "1y", "all"];
 
@@ -53,15 +64,7 @@ export function LeaderboardTable({
   const [facultyFilter, setFacultyFilter] = useState<Faculty | null>(null);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("30d");
 
-  // Faculties present in the data
-  const availableFaculties = useMemo(() => {
-    const set = new Set<Faculty>();
-    for (const e of data) {
-      const f = getFaculty(e.program);
-      if (f) set.add(f);
-    }
-    return FACULTIES.filter((f) => set.has(f));
-  }, [data]);
+  const availableFaculties = FACULTIES;
 
   // Sort by selected window, assign ranks, then filter
   const ranked: RankedEntry[] = useMemo(() => {
@@ -143,7 +146,7 @@ export function LeaderboardTable({
                       : "border-zinc-200 text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {f}
+                  {FACULTY_LABELS[f] ?? f}
                 </button>
               ))}
             </div>
@@ -233,42 +236,43 @@ export function LeaderboardTable({
                         </TableCell>
 
                         <TableCell>
-                          <div className="inline-flex items-start gap-3 group">
-                            <img
-                              src={`https://github.com/${entry.username}.png`}
-                              alt={entry.username}
-                              width={32}
-                              height={32}
-                              className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
-                            />
-                            <span className="min-w-0">
-                              <span className="block font-medium truncate">
-                                {getDisplayName(entry)}
-                              </span>
-                              <a
-                                href={`https://github.com/${entry.username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="cursor-pointer block text-xs text-muted-foreground transition-colors hover:text-yellow-600 hover:underline underline-offset-4"
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <div className="inline-flex items-start gap-3 group cursor-pointer">
+                                <img
+                                  src={`https://github.com/${entry.username}.png`}
+                                  alt={entry.username}
+                                  width={32}
+                                  height={32}
+                                  className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
+                                />
+                                <span className="min-w-0">
+                                  <span className="block font-medium truncate">
+                                    {getDisplayName(entry)}
+                                  </span>
+                                  <span className="block text-xs text-muted-foreground">
+                                    @{entry.username}
+                                  </span>
+                                </span>
+                                {entry.is_verified && (
+                                  <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
+                                )}
+                              </div>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="rounded-lg bg-zinc-900 text-white px-3 py-2.5 text-xs shadow-lg z-50 max-w-[200px]"
+                                sideOffset={8}
+                                side="top"
                               >
-                                @{entry.username}
-                              </a>
-                              {entry.linkedinUrl && (
-                                <a
-                                  href={entry.linkedinUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="cursor-pointer mt-1 hidden items-center gap-1 text-xs text-[#0A66C2] hover:underline group-hover:inline-flex"
-                                >
-                                  <Linkedin className="h-3 w-3" />
-                                  <span>LinkedIn</span>
-                                </a>
-                              )}
-                            </span>
-                            {entry.is_verified && (
-                              <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
-                            )}
-                          </div>
+                              <LeaderboardTooltipContent
+                                entry={entry}
+                                timeWindow={timeWindow}
+                              />
+                                <Tooltip.Arrow className="fill-zinc-900" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
                         </TableCell>
 
                         <TableCell className="text-muted-foreground">
@@ -276,13 +280,9 @@ export function LeaderboardTable({
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <ScoreTooltip
-                            stars={entry.stars}
-                            prs={stats.prs}
-                            commits={stats.commits}
-                            score={stats.score}
-                            timeWindow={timeWindow}
-                          />
+                          <span className="font-mono font-semibold tabular-nums">
+                            {stats.score.toLocaleString()}
+                          </span>
                         </TableCell>
                       </motion.tr>
                     );
@@ -297,58 +297,3 @@ export function LeaderboardTable({
   );
 }
 
-function ScoreTooltip({
-  stars,
-  prs,
-  commits,
-  score,
-  timeWindow,
-}: {
-  stars: number;
-  prs: number;
-  commits: number;
-  score: number;
-  timeWindow: TimeWindow;
-}) {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <span className="cursor-pointer font-mono font-semibold tabular-nums">
-          {score.toLocaleString()}
-        </span>
-      </Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          className="rounded-lg bg-zinc-900 text-white px-3 py-2.5 text-xs shadow-lg z-50"
-          sideOffset={5}
-          side="left"
-        >
-          <div className="space-y-1 font-mono min-w-[140px]">
-            <div className="flex justify-between gap-4">
-              <span className="text-yellow-300">Stars ×10</span>
-              <span>{(stars * 10).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-blue-300">PRs ×5</span>
-              <span>{(prs * 5).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-green-300">Commits ×1</span>
-              <span>{commits.toLocaleString()}</span>
-            </div>
-            <div className="border-t border-zinc-700 pt-1 flex justify-between gap-4 font-semibold">
-              <span>Total</span>
-              <span>{score.toLocaleString()}</span>
-            </div>
-            {timeWindow !== "all" && (
-              <div className="text-[10px] text-zinc-500 pt-0.5">
-                Stars are always all-time
-              </div>
-            )}
-          </div>
-          <Tooltip.Arrow className="fill-zinc-900" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  );
-}

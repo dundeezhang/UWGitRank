@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { Tooltip } from "radix-ui";
 import type { RankedEntry, TimeWindow } from "@/lib/leaderboard-shared";
-import { getWindowStats, TIME_WINDOW_LABELS } from "@/lib/leaderboard-shared";
+import { getWindowStats } from "@/lib/leaderboard-shared";
+import { LeaderboardTooltipContent } from "@/components/LeaderboardTooltipContent";
 
 const PLACE_STYLES: Record<number, { card: string; height: string }> = {
   1: { card: "card-holographic", height: "h-28" },
@@ -12,11 +13,6 @@ const PLACE_STYLES: Record<number, { card: string; height: string }> = {
 };
 
 const PLACE_DELAYS: Record<number, number> = { 2: 0, 1: 0.15, 3: 0.3 };
-
-function getDisplayName(entry: RankedEntry): string {
-  const fullName = `${entry.firstName ?? ""} ${entry.lastName ?? ""}`.trim();
-  return fullName || entry.username;
-}
 
 function PodiumCard({
   entry,
@@ -30,57 +26,6 @@ function PodiumCard({
   const style = PLACE_STYLES[place];
   const stats = getWindowStats(entry, timeWindow);
   const delay = PLACE_DELAYS[place] ?? 0;
-  const windowLabel = TIME_WINDOW_LABELS[timeWindow];
-
-  const tooltipContent = (
-    <div className="space-y-2">
-      <div className="font-semibold text-white border-b border-zinc-700 pb-1">
-        {getDisplayName(entry)}
-      </div>
-      <div className="text-[10px] text-zinc-400">{windowLabel} · Score breakdown</div>
-      <div className="space-y-1 font-mono text-xs">
-        <div className="flex justify-between gap-4">
-          <span className="text-yellow-300">Stars ×10</span>
-          <span>{(entry.stars * 10).toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between gap-4">
-          <span className="text-blue-300">PRs ×5</span>
-          <span>{(stats.prs * 5).toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between gap-4">
-          <span className="text-green-300">Commits ×1</span>
-          <span>{stats.commits.toLocaleString()}</span>
-        </div>
-        <div className="border-t border-zinc-700 pt-1 flex justify-between gap-4 font-semibold">
-          <span>Total</span>
-          <span>{stats.score.toLocaleString()}</span>
-        </div>
-      </div>
-      <div className="text-[10px] text-zinc-500 pt-0.5">
-        All-time: {entry.commits_all} commits · {entry.prs_all} PRs · {entry.stars} stars
-      </div>
-      <a
-        href={`https://github.com/${entry.username}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="cursor-pointer block text-[10px] text-[#EAB308] hover:underline pt-1"
-        onClick={(e) => e.stopPropagation()}
-      >
-        GitHub: @{entry.username}
-      </a>
-      {entry.linkedinUrl && (
-        <a
-          href={entry.linkedinUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="cursor-pointer block text-[10px] text-[#0A66C2] hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          LinkedIn profile →
-        </a>
-      )}
-    </div>
-  );
 
   return (
     <Tooltip.Root>
@@ -115,7 +60,8 @@ function PodiumCard({
           {/* Name & score */}
           <div className="text-center min-w-0 max-w-[120px]">
             <div className="font-bold text-sm truncate">
-              {getDisplayName(entry)}
+              {`${entry.firstName ?? ""} ${entry.lastName ?? ""}`.trim() ||
+                entry.username}
             </div>
             <div className="text-xs font-mono font-semibold mt-0.5 tabular-nums">
               {stats.score.toLocaleString()} pts
@@ -148,7 +94,7 @@ function PodiumCard({
           sideOffset={8}
           side="top"
         >
-          {tooltipContent}
+          <LeaderboardTooltipContent entry={entry} timeWindow={timeWindow} />
           <Tooltip.Arrow className="fill-zinc-900" />
         </Tooltip.Content>
       </Tooltip.Portal>
