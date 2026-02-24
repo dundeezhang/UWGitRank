@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Dialog } from 'radix-ui'
-import { X, Github, LogIn, UserPlus, Loader2, AlertCircle } from 'lucide-react'
+import { X, Github, UserPlus, Loader2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -139,31 +139,32 @@ export function JoinLeaderboardDialog({
           </div>
 
           {step === 'choose' && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col items-center gap-4">
               {authErrorMessage && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-sm text-red-800">
+                <div className="w-full p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-sm text-red-800">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {authErrorMessage}
                 </div>
               )}
-              <form action={signInToView}>
-                <Button
-                  type="submit"
-                  className="cursor-pointer w-full h-11 bg-zinc-900 text-white hover:bg-zinc-800 border-2 border-[#EAB308] gap-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  Log in (existing account)
-                </Button>
-              </form>
               <Button
                 type="button"
-                variant="outline"
-                className="cursor-pointer w-full h-11 border-zinc-300 text-zinc-900 hover:bg-zinc-100 gap-2"
+                className="cursor-pointer w-full h-11 bg-[#EAB308] text-black hover:bg-[#D9A307] gap-2 font-semibold"
                 onClick={() => setStep('signup')}
               >
                 <UserPlus className="w-4 h-4" />
-                Sign up (new account)
+                Sign up
               </Button>
+              <form action={signInToView}>
+                <button
+                  type="submit"
+                  className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+                >
+                  Already have an account?{" "}
+                  <span className="underline underline-offset-4 font-medium">
+                    Log in
+                  </span>
+                </button>
+              </form>
             </div>
           )}
 
