@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers, cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
@@ -101,35 +101,13 @@ export async function signOut() {
 }
 
 function normalizeOtpSendError(message: string) {
+    if (/sub claim in JWT does not exist/i.test(message) || /user does not exist/i.test(message)) {
+        return 'Your session is invalid. Please sign out and log in with GitHub again.'
+    }
     if (/only request this after/i.test(message) || /over_email_send_rate_limit/i.test(message)) {
         return 'Please wait 60 seconds before requesting another code.'
     }
     return message
-}
-
-/**
- * Uses the admin API (service_role key) to trigger an email-change flow.
- * This bypasses JWT validation issues that cause 403s for new OAuth users.
- */
-async function adminTriggerEmailChange(userId: string, currentEmail: string, newEmail: string) {
-    const admin = createAdminClient()
-
-    // Use admin.generateLink to create the email-change OTP.
-    // This reliably creates the pending change AND sends the confirmation email
-    // via Supabase's configured mailer, regardless of user JWT state.
-    const { data, error } = await admin.auth.admin.generateLink({
-        type: 'email_change_new',
-        email: currentEmail,
-        newEmail,
-    })
-
-    if (error) {
-        console.error('[adminTriggerEmailChange] generateLink error:', error)
-        return { error: normalizeOtpSendError(error.message) }
-    }
-
-    console.log('[adminTriggerEmailChange] email change link generated for user:', userId, 'newEmail:', newEmail)
-    return { success: true, data }
 }
 
 export async function verifyStudentEmail(prevState: any, formData: FormData) {
@@ -145,19 +123,17 @@ export async function verifyStudentEmail(prevState: any, formData: FormData) {
         return { error: 'Your session is invalid. Please sign out and log in with GitHub again.' }
     }
 
-    const user = userData.user
-    const currentEmail = user.email ?? `${user.id}@noemail.local`
-
-    console.log('[verifyStudentEmail] Sending OTP to:', email, 'for user:', user.id)
-    const result = await adminTriggerEmailChange(user.id, currentEmail, email)
-    if ('error' in result) {
-        return { error: result.error }
+    console.log('[verifyStudentEmail] Sending OTP to:', email, 'for user:', userData.user.id)
+    const { error } = await supabase.auth.updateUser({ email })
+    if (error) {
+        console.error('[verifyStudentEmail] updateUser error:', error)
+        return { error: normalizeOtpSendError(error.message) }
     }
 
     return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
 }
 
-/** Resend the 6-digit verification code. Uses admin API to bypass JWT issues. */
+/** Resend the 6-digit verification code using the authenticated user session. */
 export async function resendVerificationCode(email: string) {
     if (!email || !email.endsWith('@uwaterloo.ca')) {
         return { error: 'Please enter a valid @uwaterloo.ca email address' }
@@ -169,12 +145,10 @@ export async function resendVerificationCode(email: string) {
         return { error: 'Your session is invalid. Please sign out and log in with GitHub again.' }
     }
 
-    const user = userData.user
-    const currentEmail = user.email ?? `${user.id}@noemail.local`
-
-    const result = await adminTriggerEmailChange(user.id, currentEmail, email)
-    if ('error' in result) {
-        return { error: result.error }
+    const { error } = await supabase.auth.updateUser({ email })
+    if (error) {
+        console.error('[resendVerificationCode] updateUser error:', error)
+        return { error: normalizeOtpSendError(error.message) }
     }
 
     return { success: true, message: 'A new 6-digit code has been sent to your email.' }
@@ -192,9 +166,7 @@ export async function verifyOtpCode(email: string, token: string) {
         return { error: 'Your session is invalid. Please sign out and log in with GitHub again.' }
     }
 
-    // Use the admin client to verify OTP — bypasses JWT issues for new OAuth users
-    const admin = createAdminClient()
-    const { data, error } = await admin.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
         type: 'email_change',

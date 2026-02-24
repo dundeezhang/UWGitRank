@@ -13,7 +13,7 @@ export function AboutModal() {
       <Dialog.Trigger asChild>
         <button
           type="button"
-          className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest font-medium hover:text-zinc-900 transition-colors"
+          className="cursor-pointer text-[11px] font-mono text-zinc-400 uppercase tracking-widest font-medium hover:text-zinc-900 transition-colors"
         >
           About
         </button>
@@ -54,7 +54,7 @@ export function AboutModal() {
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 transition-colors"
+                className="cursor-pointer p-2 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -130,7 +130,7 @@ export function AboutModal() {
                   href="https://www.linkedin.com/in/dongha-kimm/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-zinc-900 transition-colors"
+                  className="cursor-pointer underline underline-offset-2 hover:text-zinc-900 transition-colors"
                 >
                   Dongha Kim
                 </a>{" "}
@@ -139,7 +139,7 @@ export function AboutModal() {
                   href="https://www.linkedin.com/in/brian-an06/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-zinc-900 transition-colors"
+                  className="cursor-pointer underline underline-offset-2 hover:text-zinc-900 transition-colors"
                 >
                   Brian An
                 </a>

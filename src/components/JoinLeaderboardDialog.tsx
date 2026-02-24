@@ -130,7 +130,7 @@ export function JoinLeaderboardDialog({
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 transition-colors"
+                className="cursor-pointer p-2 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -149,7 +149,7 @@ export function JoinLeaderboardDialog({
               <form action={signInToView}>
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-zinc-900 text-white hover:bg-zinc-800 border-2 border-[#EAB308] gap-2"
+                  className="cursor-pointer w-full h-11 bg-zinc-900 text-white hover:bg-zinc-800 border-2 border-[#EAB308] gap-2"
                 >
                   <LogIn className="w-4 h-4" />
                   Log in (existing account)
@@ -158,7 +158,7 @@ export function JoinLeaderboardDialog({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-11 border-zinc-300 text-zinc-900 hover:bg-zinc-100 gap-2"
+                className="cursor-pointer w-full h-11 border-zinc-300 text-zinc-900 hover:bg-zinc-100 gap-2"
                 onClick={() => setStep('signup')}
               >
                 <UserPlus className="w-4 h-4" />
@@ -256,7 +256,7 @@ export function JoinLeaderboardDialog({
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-zinc-600"
+                  className="cursor-pointer text-zinc-600"
                   onClick={() => {
                     setStep('choose')
                     setError(null)
@@ -267,7 +267,7 @@ export function JoinLeaderboardDialog({
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-[#EAB308] text-black hover:bg-[#D9A307] gap-2"
+                  className="cursor-pointer flex-1 bg-[#EAB308] text-black hover:bg-[#D9A307] gap-2"
                   disabled={submitting}
                 >
                   {submitting ? (
