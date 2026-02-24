@@ -1,7 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
 
 export default async function DebugPage() {
+  if (process.env.NODE_ENV === "production") notFound();
+
   const supabase = await createClient();
   const {
     data: { user },

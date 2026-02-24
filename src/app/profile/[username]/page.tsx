@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/utils/supabase/server'
-import { Trophy, Github, Star, GitCommit, Link as LinkIcon, BadgeCheck, ShieldX, Users } from 'lucide-react'
+import { prisma } from '@/lib/prisma'
+import { notFound } from 'next/navigation'
+import { Trophy, Github, Star, GitCommit, GitPullRequest, Heart, Link as LinkIcon, BadgeCheck, ShieldX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScaleIn, FadeIn, StaggerContainer, StaggerItem } from '@/components/motion'
 import Link from 'next/link'
+import { ENDORSEMENT_WEIGHT } from '@/utils/ranking'
 
 export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
     const { username } = await params
@@ -21,26 +23,28 @@ export async function generateMetadata({ params }: { params: { username: string 
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
     const { username } = await params
-    const supabase = await createClient()
 
-    // Mock data
-    const profile = {
-        username: username,
-        full_name: username.charAt(0).toUpperCase() + username.slice(1),
-        bio: 'Software Engineering @ University of Waterloo',
-        stars: 1200,
-        commits: 450,
-        followers: 85,
-        is_verified: true,
-        avatar_url: `https://github.com/${username}.png`
-    }
+    const profile = await prisma.profile.findFirst({
+        where: { username },
+        include: { githubMetrics: true },
+    })
+
+    if (!profile) notFound()
+
+    const metrics = profile.githubMetrics
+    const fullName = `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim() || username
+    const endorsements = metrics?.endorsementCount ?? 0
+    const stars = metrics?.stars ?? 0
+    const commits = metrics?.commits ?? 0
+    const mergedPrs = metrics?.mergedPrs ?? 0
+    const rankScore = (metrics?.rankScore ?? 0) + endorsements * ENDORSEMENT_WEIGHT
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/leaderboard" className="font-bold text-xl tracking-tight flex items-center gap-2">
-                        <Trophy className="w-6 h-6 text-primary" />
+        <div className="min-h-screen bg-[#f2f2f2] text-zinc-900">
+            <header className="border-b border-zinc-200 bg-white/60 backdrop-blur-md sticky top-0 z-10">
+                <div className="max-w-4xl mx-auto px-4 h-14 flex items-center">
+                    <Link href="/leaderboard" className="font-bold text-lg tracking-tight flex items-center gap-2 text-zinc-900 hover:text-zinc-600 transition-colors">
+                        <Trophy className="w-5 h-5 text-[#EAB308]" />
                         <span>GitRank</span>
                     </Link>
                 </div>
@@ -50,78 +54,120 @@ export default async function ProfilePage({ params }: { params: { username: stri
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
                     <ScaleIn>
                         <img
-                            src={profile.avatar_url}
-                            alt={profile.username}
-                            className="w-32 h-32 md:w-48 md:h-48 rounded-full border-4 border-card shadow-xl"
+                            src={`https://github.com/${username}.png`}
+                            alt={username}
+                            className="w-32 h-32 md:w-44 md:h-44 rounded-full border-4 border-white shadow-xl"
                         />
                     </ScaleIn>
 
                     <FadeIn delay={0.1} className="flex-1 space-y-4 text-center md:text-left">
                         <div className="space-y-1">
                             <div className="flex items-center justify-center md:justify-start gap-2">
-                                <h1 className="text-4xl font-bold">{profile.full_name}</h1>
-                                {profile.is_verified ? (
-                                    <BadgeCheck className="w-8 h-8 text-primary shadow-sm" />
+                                <h1 className="text-3xl font-extrabold tracking-tight">{fullName}</h1>
+                                {profile.isVerified ? (
+                                    <BadgeCheck className="w-6 h-6 text-[#EAB308]" />
                                 ) : (
-                                    <ShieldX className="w-8 h-8 text-muted-foreground opacity-50" />
+                                    <ShieldX className="w-6 h-6 text-zinc-400" />
                                 )}
                             </div>
-                            <p className="text-xl text-muted-foreground">@{profile.username}</p>
+                            <p className="text-lg text-zinc-500">@{username}</p>
                         </div>
 
-                        <p className="text-lg max-w-2xl leading-relaxed">{profile.bio}</p>
+                        {profile.program && (
+                            <p className="text-zinc-600">{profile.program}</p>
+                        )}
 
-                        <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-3">
                             <Button asChild variant="outline" size="sm">
-                                <a href={`https://github.com/${profile.username}`} target="_blank" rel="noreferrer" className="gap-2">
+                                <a href={`https://github.com/${username}`} target="_blank" rel="noreferrer" className="gap-2">
                                     <Github className="w-4 h-4" />
                                     GitHub Profile
                                     <LinkIcon className="w-3 h-3 opacity-50" />
                                 </a>
                             </Button>
+                            {profile.linkedinUrl && (
+                                <Button asChild variant="outline" size="sm">
+                                    <a href={profile.linkedinUrl} target="_blank" rel="noreferrer" className="gap-2">
+                                        LinkedIn
+                                        <LinkIcon className="w-3 h-3 opacity-50" />
+                                    </a>
+                                </Button>
+                            )}
                         </div>
                     </FadeIn>
                 </div>
 
-                <StaggerContainer stagger={0.1} delay={0.2} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Rank Score */}
+                <FadeIn delay={0.15}>
+                    <div className="bg-zinc-900 text-white rounded-2xl p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-zinc-400 font-medium">Rank Score</p>
+                            <p className="text-4xl font-extrabold tabular-nums text-[#EAB308]">
+                                {Math.round(rankScore).toLocaleString()}
+                            </p>
+                        </div>
+                        {metrics?.lastSynced && (
+                            <p className="text-xs text-zinc-500">
+                                Last synced {new Date(metrics.lastSynced).toLocaleDateString()}
+                            </p>
+                        )}
+                    </div>
+                </FadeIn>
+
+                {/* Stats Grid */}
+                <StaggerContainer stagger={0.1} delay={0.2} className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StaggerItem>
-                        <Card className="border-border shadow-sm">
+                        <Card className="border-zinc-200 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                    <Star className="w-4 h-4" />
-                                    Total Stars
+                                <CardTitle className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                                    <Star className="w-3.5 h-3.5 text-yellow-600" />
+                                    Stars
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <span className="text-3xl font-bold">{profile.stars.toLocaleString()}</span>
+                                <span className="text-2xl font-bold">{stars.toLocaleString()}</span>
                             </CardContent>
                         </Card>
                     </StaggerItem>
 
                     <StaggerItem>
-                        <Card className="border-border shadow-sm">
+                        <Card className="border-zinc-200 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                    <GitCommit className="w-4 h-4" />
-                                    Contributions
+                                <CardTitle className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                                    <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />
+                                    Merged PRs
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <span className="text-3xl font-bold">{profile.commits.toLocaleString()}</span>
+                                <span className="text-2xl font-bold">{mergedPrs.toLocaleString()}</span>
                             </CardContent>
                         </Card>
                     </StaggerItem>
 
                     <StaggerItem>
-                        <Card className="border-border shadow-sm">
+                        <Card className="border-zinc-200 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                    <Users className="w-4 h-4" />
-                                    Followers
+                                <CardTitle className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                                    <GitCommit className="w-3.5 h-3.5 text-green-600" />
+                                    Commits
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <span className="text-3xl font-bold">{profile.followers.toLocaleString()}</span>
+                                <span className="text-2xl font-bold">{commits.toLocaleString()}</span>
+                            </CardContent>
+                        </Card>
+                    </StaggerItem>
+
+                    <StaggerItem>
+                        <Card className="border-zinc-200 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                                    <Heart className="w-3.5 h-3.5 text-pink-600" />
+                                    Endorsements
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <span className="text-2xl font-bold">{endorsements.toLocaleString()}</span>
                             </CardContent>
                         </Card>
                     </StaggerItem>
