@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy } from "lucide-react";
 import { Tooltip } from "radix-ui";
 import type { RankedEntry, TimeWindow } from "@/lib/leaderboard-shared";
 import { getWindowStats, TIME_WINDOW_LABELS } from "@/lib/leaderboard-shared";
@@ -135,9 +134,11 @@ function PodiumCard({
               damping: 20,
             }}
           >
-            <Trophy
-              className={`w-6 h-6 ${place === 1 ? "text-white" : "text-white/80"}`}
-            />
+            <span
+              className={`text-2xl font-black ${place === 1 ? "text-white" : "text-white/80"}`}
+            >
+              {place}
+            </span>
           </motion.div>
         </motion.div>
       </Tooltip.Trigger>
