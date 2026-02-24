@@ -1,9 +1,23 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/utils/supabase/server'
 import { Trophy, Github, Star, GitCommit, Link as LinkIcon, BadgeCheck, ShieldX, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScaleIn, FadeIn, StaggerContainer, StaggerItem } from '@/components/motion'
 import Link from 'next/link'
+
+export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
+    const { username } = await params
+    return {
+        title: `${username}'s Profile`,
+        description: `View ${username}'s open-source stats and GitHub ranking on UW GitRank.`,
+        alternates: { canonical: `/profile/${username}` },
+        openGraph: {
+            title: `${username} — UW GitRank`,
+            description: `See ${username}'s GitHub contributions and Waterloo ranking.`,
+        },
+    }
+}
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
     const { username } = await params

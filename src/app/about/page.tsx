@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -15,6 +16,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion";
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Learn how UW GitRank scores Waterloo students — the formula, metric weights, endorsements, data sync, and how to get ranked.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (

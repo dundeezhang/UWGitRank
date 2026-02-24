@@ -13,9 +13,50 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://uwgitrank.com";
+
+const seoDescription =
+  "Rank University of Waterloo students by open-source impact. Stars, merged PRs, commits & peer endorsements — see who's making waves on GitHub.";
+
 export const metadata: Metadata = {
-  title: "UW GitRank",
-  description: "University of Waterloo student GitHub leaderboard",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "UW GitRank — Waterloo Student GitHub Leaderboard",
+    template: "%s | UW GitRank",
+  },
+  description: seoDescription,
+  keywords: [
+    "University of Waterloo",
+    "GitHub",
+    "leaderboard",
+    "open source",
+    "ranking",
+    "students",
+    "software engineering",
+    "GitRank",
+    "UWaterloo",
+  ],
+  authors: [{ name: "Dongha Kim" }, { name: "Brian An" }],
+  creator: "UW GitRank",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "UW GitRank",
+    title: "UW GitRank — Waterloo Student GitHub Leaderboard",
+    description: seoDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "UW GitRank — Waterloo Student GitHub Leaderboard",
+    description: seoDescription,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1 },
+  },
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({

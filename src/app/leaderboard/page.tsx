@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { fetchLeaderboard } from "@/lib/leaderboard";
-// Trophy removed — no longer used in heading
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Leaderboard",
+  description:
+    "Live rankings of University of Waterloo students by GitHub open-source contributions — stars, merged PRs, commits & endorsements.",
+  alternates: { canonical: "/leaderboard" },
+};
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
 import { signOut, signInToView, fetchUserEndorsements } from "@/app/auth/actions";

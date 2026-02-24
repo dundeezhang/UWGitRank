@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Verify",
+  description:
+    "Verify your University of Waterloo student email to join the UW GitRank leaderboard.",
+  alternates: { canonical: "/verify" },
+};
 import { Github, Mail, MoreHorizontal, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
