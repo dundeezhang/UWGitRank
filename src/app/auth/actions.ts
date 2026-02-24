@@ -74,7 +74,7 @@ export async function signInToView() {
     return redirect(data.url)
 }
 
-// Sign in to join the rankings — redirects to /verify after OAuth
+// Sign in to join the rankings — redirects to /leaderboard after OAuth
 export async function signInToJoin() {
     const supabase = await createClient()
     const origin = await getOrigin()
@@ -82,7 +82,7 @@ export async function signInToJoin() {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-            redirectTo: `${origin}/auth/callback?next=/verify`,
+            redirectTo: `${origin}/auth/callback?next=/leaderboard`,
             queryParams: {
                 prompt: 'select_account',
             },

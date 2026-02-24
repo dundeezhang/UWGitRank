@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { cookies, headers } from 'next/headers'
+import { headers } from 'next/headers'
 
 const SIGNUP_PENDING_COOKIE = 'signup_pending'
 const COOKIE_MAX_AGE = 60 * 15 // 15 minutes
@@ -29,7 +29,13 @@ function isValidLinkedInUrl(url: string): boolean {
 
 export async function POST(request: NextRequest) {
     try {
-        let body: { firstName?: string; lastName?: string; program?: string; linkedinUrl?: string }
+        let body: {
+            firstName?: string
+            lastName?: string
+            program?: string
+            waterlooEmail?: string
+            linkedinUrl?: string
+        }
         try {
             body = await request.json()
         } catch {
@@ -39,6 +45,7 @@ export async function POST(request: NextRequest) {
         const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : ''
         const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : ''
         const program = typeof body.program === 'string' ? body.program.trim() : ''
+        const waterlooEmail = typeof body.waterlooEmail === 'string' ? body.waterlooEmail.trim().toLowerCase() : ''
         const linkedinUrl = typeof body.linkedinUrl === 'string' ? body.linkedinUrl.trim() : ''
 
         if (!firstName || !lastName) {
@@ -53,6 +60,12 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
+        if (!waterlooEmail || !waterlooEmail.endsWith('@uwaterloo.ca')) {
+            return NextResponse.json(
+                { error: 'Please enter a valid @uwaterloo.ca email address' },
+                { status: 400 }
+            )
+        }
         if (!isValidLinkedInUrl(linkedinUrl)) {
             return NextResponse.json(
                 { error: 'Please enter a valid LinkedIn profile URL' },
@@ -64,6 +77,7 @@ export async function POST(request: NextRequest) {
             firstName,
             lastName,
             program,
+            waterlooEmail,
             linkedinUrl: linkedinUrl || null,
         })
 
@@ -72,7 +86,7 @@ export async function POST(request: NextRequest) {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: {
-                redirectTo: `${origin}/auth/callback?next=/verify`,
+                redirectTo: `${origin}/auth/callback?next=/leaderboard`,
                 queryParams: { prompt: 'select_account' },
             },
         })

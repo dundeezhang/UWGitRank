@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Dialog } from 'radix-ui'
-import { X, Github, UserPlus, Loader2, AlertCircle } from 'lucide-react'
+import { X, Github, UserPlus, Loader2, AlertCircle, Mail } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +36,7 @@ export function JoinLeaderboardDialog({
     firstName: '',
     lastName: '',
     program: '',
+    waterlooEmail: '',
     linkedinUrl: '',
   })
 
@@ -44,7 +45,7 @@ export function JoinLeaderboardDialog({
     if (!next) {
       setStep('choose')
       setError(null)
-      setForm({ firstName: '', lastName: '', program: '', linkedinUrl: '' })
+      setForm({ firstName: '', lastName: '', program: '', waterlooEmail: '', linkedinUrl: '' })
     }
   }
 
@@ -60,6 +61,7 @@ export function JoinLeaderboardDialog({
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           program: form.program || undefined,
+          waterlooEmail: form.waterlooEmail.trim(),
           linkedinUrl: form.linkedinUrl.trim() || undefined,
         }),
       })
@@ -123,7 +125,7 @@ export function JoinLeaderboardDialog({
                 <Dialog.Description className="text-sm text-zinc-500">
                   {step === 'choose'
                     ? 'Log in to view the leaderboard or sign up to join.'
-                    : 'Enter your details, then connect with GitHub and verify your Waterloo email.'}
+                    : 'Enter your details and Waterloo email, then connect with GitHub.'}
                 </Dialog.Description>
               </div>
             </div>
@@ -230,6 +232,29 @@ export function JoinLeaderboardDialog({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="waterlooEmail" className="text-zinc-700">
+                  Waterloo Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+                  <Input
+                    id="waterlooEmail"
+                    type="email"
+                    className={cn(inputClassName, 'pl-9')}
+                    value={form.waterlooEmail}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, waterlooEmail: e.target.value }))
+                    }
+                    required
+                    placeholder="yourname@uwaterloo.ca"
+                    disabled={submitting}
+                  />
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Must be a valid @uwaterloo.ca address.
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="linkedinUrl" className="text-zinc-700">
