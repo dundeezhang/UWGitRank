@@ -7,7 +7,7 @@ import { OtpInput } from '@/components/ui/otp-input'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Mail, Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
+import { Mail, Loader2, AlertCircle, ArrowLeft, Info } from 'lucide-react'
 
 type Step = 'email_entry' | 'otp_entry'
 
@@ -122,6 +122,13 @@ export function VerifyForm() {
                         Enter the 6-digit code sent to
                     </p>
                     <p className="font-medium text-sm">{email}</p>
+                </div>
+
+                <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                    <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                    <span>
+                        The email may take up to a minute to arrive. If you don&apos;t see it, please check your <strong>junk / spam</strong> folder.
+                    </span>
                 </div>
 
                 <OtpInput

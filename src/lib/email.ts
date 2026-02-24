@@ -1,22 +1,29 @@
 import nodemailer from 'nodemailer'
 import crypto from 'crypto'
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-    },
-})
+const MAX_RETRIES = 2
+
+function createTransporter() {
+    return nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD,
+        },
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 15_000,
+    })
+}
 
 export function generateOtp(): string {
     return crypto.randomInt(100_000, 999_999).toString()
 }
 
 export async function sendOtpEmail(to: string, code: string) {
-    await transporter.sendMail({
+    const mailOptions = {
         from: `"GitRank" <${process.env.GMAIL_USER}>`,
         to,
         subject: 'Your GitRank Verification Code',
@@ -43,5 +50,24 @@ export async function sendOtpEmail(to: string, code: string) {
     GitRank 2026
   </p>
 </div>`,
-    })
+    }
+
+    let lastError: unknown
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        const transporter = createTransporter()
+        try {
+            await transporter.sendMail(mailOptions)
+            return
+        } catch (err) {
+            lastError = err
+            console.error(
+                `[sendOtpEmail] Attempt ${attempt + 1}/${MAX_RETRIES + 1} failed for ${to}:`,
+                err,
+            )
+        } finally {
+            transporter.close()
+        }
+    }
+
+    throw lastError
 }
