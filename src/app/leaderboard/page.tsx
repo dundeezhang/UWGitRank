@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { fetchLeaderboard } from "@/lib/leaderboard";
-import { Trophy } from "lucide-react";
+// Trophy removed — no longer used in heading
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion";
 import Link from "next/link";
@@ -88,7 +88,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link
             href="/"
-            className="font-bold text-xl tracking-tight flex items-center gap-2.5"
+            className="cursor-pointer font-bold text-xl tracking-tight flex items-center gap-2.5"
           >
             <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center">
               <Github className="w-5 h-5 text-[#EAB308]" />
@@ -98,7 +98,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
 
           <div className="flex items-center gap-3">
             <Link href="/about">
-              <Button size="sm" variant="ghost" className="text-zinc-600">
+              <Button size="sm" variant="ghost" className="cursor-pointer text-zinc-600">
                 How Rankings Work
               </Button>
             </Link>
@@ -110,7 +110,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                 <Button
                   type="button"
                   size="sm"
-                  className="bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
+                  className="cursor-pointer bg-[#EAB308] text-black hover:bg-[#D9A307] flex items-center gap-2"
                 >
                   <Github className="w-4 h-4" />
                   Join Leaderboard
@@ -119,7 +119,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
             ) : null}
             {user && (
               <form action={signOut}>
-                <button className="text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
+                <button className="cursor-pointer text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
                   Sign out
                 </button>
               </form>
@@ -131,9 +131,8 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
       <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
         <FadeIn>
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <Trophy className="w-7 h-7 text-[#EAB308]" />
-              Rankings
+            <h1 className="text-3xl font-bold tracking-tight">
+              Leaderboard
             </h1>
             <p className="text-muted-foreground text-sm">
               Waterloo student GitHub rankings · scored by stars, PRs &amp;

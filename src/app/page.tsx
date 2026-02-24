@@ -82,7 +82,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <Button
                   asChild
                   size="lg"
-                  className="h-14 px-10 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 shadow-[0_0_0_3px_#EAB308] transition-all active:scale-95 text-base font-semibold"
+                  className="cursor-pointer h-14 px-10 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 shadow-[0_0_0_3px_#EAB308] transition-all active:scale-95 text-base font-semibold"
                 >
                   <Link href="/leaderboard">
                     <Trophy className="mr-2 w-5 h-5 text-[#EAB308]" />
@@ -92,7 +92,7 @@ export default async function Home({ searchParams }: PageProps) {
                 </Button>
               </div>
               <form action={signOut}>
-                <button className="text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
+                <button className="cursor-pointer text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
                   Sign out of {user.user_metadata.user_name}
                 </button>
               </form>
@@ -107,7 +107,7 @@ export default async function Home({ searchParams }: PageProps) {
                   <Button
                     type="button"
                     size="lg"
-                    className="h-14 px-8 rounded-lg bg-[#EAB308] text-black hover:bg-[#D9A307] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
+                    className="cursor-pointer h-14 px-8 rounded-lg bg-[#EAB308] text-black hover:bg-[#D9A307] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
                   >
                     <Github className="w-5 h-5" />
                     Join the Leaderboard
@@ -117,7 +117,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <Button
                   asChild
                   size="lg"
-                  className="h-14 px-8 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 shadow-[0_0_0_3px_#EAB308] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
+                  className="cursor-pointer h-14 px-8 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 shadow-[0_0_0_3px_#EAB308] transition-all active:scale-95 text-base font-semibold flex items-center gap-2"
                 >
                   <Link href="/leaderboard">
                     <Trophy className="w-5 h-5 text-[#EAB308]" />
@@ -128,7 +128,7 @@ export default async function Home({ searchParams }: PageProps) {
               </div>
               {user && (
                 <form action={signOut}>
-                  <button className="text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
+                  <button className="cursor-pointer text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
                     Sign out of {user.user_metadata.user_name}
                   </button>
                 </form>
