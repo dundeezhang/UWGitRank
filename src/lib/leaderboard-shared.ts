@@ -42,56 +42,79 @@ export function getWindowScore(
   const endorsements = Number(entry.endorsement_count) || 0;
   const endorsementBonus = endorsements * ENDORSEMENT_WEIGHT;
   const eloBonus = getEloBonus(entry);
+  let raw: number;
   switch (window) {
     case "7d":
-      return entry.score_7d + endorsementBonus + eloBonus;
+      raw = entry.score_7d + endorsementBonus + eloBonus;
+      break;
     case "30d":
-      return entry.score_30d + endorsementBonus + eloBonus;
+      raw = entry.score_30d + endorsementBonus + eloBonus;
+      break;
     case "1y":
-      return entry.score_1y + endorsementBonus + eloBonus;
+      raw = entry.score_1y + endorsementBonus + eloBonus;
+      break;
     case "all":
-      return entry.score_all + endorsementBonus + eloBonus;
+      raw = entry.score_all + endorsementBonus + eloBonus;
+      break;
   }
+  return Math.max(0, raw);
 }
 
 export function getWindowStats(entry: LeaderboardEntry, window: TimeWindow) {
   const endorsements = Number(entry.endorsement_count) || 0;
   const endorsementBonus = endorsements * ENDORSEMENT_WEIGHT;
   const eloBonus = getEloBonus(entry);
+  let rawScore: number;
+  let stats: {
+    commits: number;
+    prs: number;
+    endorsements: number;
+    eloBonus: number;
+    score: number;
+  };
   switch (window) {
     case "7d":
-      return {
+      rawScore = entry.score_7d + endorsementBonus + eloBonus;
+      stats = {
         commits: entry.commits_7d,
         prs: entry.prs_7d,
         endorsements,
         eloBonus,
-        score: entry.score_7d + endorsementBonus + eloBonus,
+        score: Math.max(0, rawScore),
       };
+      break;
     case "30d":
-      return {
+      rawScore = entry.score_30d + endorsementBonus + eloBonus;
+      stats = {
         commits: entry.commits_30d,
         prs: entry.prs_30d,
         endorsements,
         eloBonus,
-        score: entry.score_30d + endorsementBonus + eloBonus,
+        score: Math.max(0, rawScore),
       };
+      break;
     case "1y":
-      return {
+      rawScore = entry.score_1y + endorsementBonus + eloBonus;
+      stats = {
         commits: entry.commits_1y,
         prs: entry.prs_1y,
         endorsements,
         eloBonus,
-        score: entry.score_1y + endorsementBonus + eloBonus,
+        score: Math.max(0, rawScore),
       };
+      break;
     case "all":
-      return {
+      rawScore = entry.score_all + endorsementBonus + eloBonus;
+      stats = {
         commits: entry.commits_all,
         prs: entry.prs_all,
         endorsements,
         eloBonus,
-        score: entry.score_all + endorsementBonus + eloBonus,
+        score: Math.max(0, rawScore),
       };
+      break;
   }
+  return stats;
 }
 
 export const TIME_WINDOW_LABELS: Record<TimeWindow, string> = {
