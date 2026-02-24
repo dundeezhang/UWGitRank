@@ -1,4 +1,4 @@
-import { ENDORSEMENT_WEIGHT } from "@/utils/ranking";
+import { ENDORSEMENT_WEIGHT, ELO_WEIGHT, ELO_BASELINE } from "@/utils/ranking";
 
 export type TimeWindow = "7d" | "30d" | "1y" | "all";
 
@@ -30,55 +30,66 @@ export interface RankedEntry extends LeaderboardEntry {
   rank: number;
 }
 
+function getEloBonus(entry: LeaderboardEntry): number {
+  const elo = Number(entry.elo_rating) || ELO_BASELINE;
+  return Math.round((elo - ELO_BASELINE) * ELO_WEIGHT);
+}
+
 export function getWindowScore(
   entry: LeaderboardEntry,
   window: TimeWindow,
 ): number {
   const endorsements = Number(entry.endorsement_count) || 0;
   const endorsementBonus = endorsements * ENDORSEMENT_WEIGHT;
+  const eloBonus = getEloBonus(entry);
   switch (window) {
     case "7d":
-      return entry.score_7d + endorsementBonus;
+      return entry.score_7d + endorsementBonus + eloBonus;
     case "30d":
-      return entry.score_30d + endorsementBonus;
+      return entry.score_30d + endorsementBonus + eloBonus;
     case "1y":
-      return entry.score_1y + endorsementBonus;
+      return entry.score_1y + endorsementBonus + eloBonus;
     case "all":
-      return entry.score_all + endorsementBonus;
+      return entry.score_all + endorsementBonus + eloBonus;
   }
 }
 
 export function getWindowStats(entry: LeaderboardEntry, window: TimeWindow) {
   const endorsements = Number(entry.endorsement_count) || 0;
   const endorsementBonus = endorsements * ENDORSEMENT_WEIGHT;
+  const eloBonus = getEloBonus(entry);
   switch (window) {
     case "7d":
       return {
         commits: entry.commits_7d,
         prs: entry.prs_7d,
         endorsements,
-        score: entry.score_7d + endorsementBonus,
+        eloBonus,
+        score: entry.score_7d + endorsementBonus + eloBonus,
       };
     case "30d":
       return {
         commits: entry.commits_30d,
         prs: entry.prs_30d,
         endorsements,
-        score: entry.score_30d + endorsementBonus,
+        eloBonus,
+        score: entry.score_30d + endorsementBonus + eloBonus,
       };
     case "1y":
       return {
         commits: entry.commits_1y,
         prs: entry.prs_1y,
         endorsements,
-        score: entry.score_1y + endorsementBonus,
+        eloBonus,
+        score: entry.score_1y + endorsementBonus + eloBonus,
       };
     case "all":
       return {
         commits: entry.commits_all,
         prs: entry.prs_all,
         endorsements,
-        score: entry.score_all + endorsementBonus,
+        eloBonus,
+        score: entry.score_all + endorsementBonus + eloBonus,
       };
   }
 }

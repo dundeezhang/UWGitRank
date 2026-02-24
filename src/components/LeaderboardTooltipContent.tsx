@@ -2,7 +2,7 @@
 
 import type { LeaderboardEntry, TimeWindow } from "@/lib/leaderboard-shared";
 import { getWindowStats, TIME_WINDOW_LABELS } from "@/lib/leaderboard-shared";
-import { ENDORSEMENT_WEIGHT } from "@/utils/ranking";
+import { ENDORSEMENT_WEIGHT, ELO_WEIGHT } from "@/utils/ranking";
 
 function getDisplayName(entry: LeaderboardEntry): string {
   const fullName = `${entry.firstName ?? ""} ${entry.lastName ?? ""}`.trim();
@@ -48,6 +48,14 @@ export function LeaderboardTooltipContent({
             {(stats.endorsements * ENDORSEMENT_WEIGHT).toLocaleString()}
           </span>
         </div>
+        <div className="flex justify-between gap-4">
+          <span className="text-orange-300">
+            ELO ×{ELO_WEIGHT}
+          </span>
+          <span>
+            {stats.eloBonus > 0 ? "+" : ""}{stats.eloBonus.toLocaleString()}
+          </span>
+        </div>
         <div className="border-t border-zinc-700 pt-1 flex justify-between gap-4 font-semibold">
           <span>Total</span>
           <span>{stats.score.toLocaleString()}</span>
@@ -55,7 +63,7 @@ export function LeaderboardTooltipContent({
       </div>
       {timeWindow !== "all" && (
         <div className="text-[10px] text-zinc-500 pt-0.5">
-          Stars &amp; endorsements are always all-time
+          Stars, endorsements &amp; ELO are always all-time
         </div>
       )}
       <div className="text-[10px] text-zinc-500 pt-0.5">

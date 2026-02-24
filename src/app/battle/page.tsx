@@ -110,8 +110,8 @@ export default async function BattlePage() {
       userA.githubUsername ? fetchTopRepos(userA.githubUsername) : Promise.resolve([]),
       userB.githubUsername ? fetchTopRepos(userB.githubUsername) : Promise.resolve([]),
     ]);
-  } catch {
-    // If repo fetch fails, continue with empty repos
+  } catch (err) {
+    console.error("[battle] Failed to fetch repos:", err);
   }
 
   return (

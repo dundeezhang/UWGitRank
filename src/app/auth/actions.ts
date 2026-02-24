@@ -446,7 +446,7 @@ export async function fetchUserEndorsements(): Promise<string[]> {
 export interface MatchupUser {
     id: string
     username: string
-    githubUsername: string
+    githubUsername: string | null
     firstName: string | null
     lastName: string | null
     avatarUrl: string | null
@@ -480,6 +480,7 @@ export async function getRandomMatchup(): Promise<{ users: [MatchupUser, Matchup
         FROM public.profiles p
         INNER JOIN public.github_metrics gm ON gm.user_id = p.id
         WHERE p.is_verified = true
+          AND p.github_username IS NOT NULL
           AND p.id != ${currentUserId}::uuid
         ORDER BY RANDOM()
         LIMIT 2

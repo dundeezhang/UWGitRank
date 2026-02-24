@@ -1,4 +1,5 @@
-const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
+import { unstable_cache } from "next/cache";
+import { graphql } from "./github";
 
 export interface TopRepo {
   name: string;
@@ -38,46 +39,16 @@ query($username: String!) {
 }
 `;
 
-// In-memory cache: username -> { data, timestamp }
-const cache = new Map<string, { data: TopRepo[]; timestamp: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+async function fetchTopReposUncached(username: string): Promise<TopRepo[]> {
+  const data = await graphql<TopReposQueryData>(topReposQuery, { username });
+  return data.user?.repositories.nodes ?? [];
+}
 
 export async function fetchTopRepos(username: string): Promise<TopRepo[]> {
-  const cached = cache.get(username);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data;
-  }
-
-  const token = process.env.GITHUB_TOKEN;
-  if (!token) {
-    throw new Error("Missing GITHUB_TOKEN environment variable");
-  }
-
-  const res = await fetch(GITHUB_GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query: topReposQuery, variables: { username } }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
-  }
-
-  const json: { data?: TopReposQueryData; errors?: Array<{ message: string }> } =
-    await res.json();
-
-  if (json.errors) {
-    throw new Error(
-      `GitHub GraphQL error: ${json.errors.map((e) => e.message).join(", ")}`,
-    );
-  }
-
-  const repos = json.data?.user?.repositories.nodes ?? [];
-
-  cache.set(username, { data: repos, timestamp: Date.now() });
-
-  return repos;
+  const getCached = unstable_cache(
+    () => fetchTopReposUncached(username),
+    [`top-repos-${username}`],
+    { revalidate: 3600, tags: [`top-repos-${username}`] },
+  );
+  return getCached();
 }

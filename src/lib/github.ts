@@ -81,7 +81,7 @@ function getToken(): string {
   return token;
 }
 
-async function graphql<T>(
+export async function graphql<T>(
   queryStr: string,
   variables: Record<string, unknown>,
 ): Promise<T> {

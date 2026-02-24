@@ -27,7 +27,7 @@ import {
   getFaculty,
   TIME_WINDOW_LABELS,
 } from "@/lib/leaderboard-shared";
-import { ENDORSEMENT_WEIGHT } from "@/utils/ranking";
+import { ENDORSEMENT_WEIGHT, ELO_WEIGHT } from "@/utils/ranking";
 import { toggleEndorsement } from "@/app/auth/actions";
 
 export type { LeaderboardEntry };
@@ -387,6 +387,7 @@ export function LeaderboardTable({
                             prs={stats.prs}
                             commits={stats.commits}
                             endorsements={stats.endorsements}
+                            eloBonus={stats.eloBonus}
                             score={stats.score}
                             timeWindow={timeWindow}
                           />
@@ -443,6 +444,7 @@ function ScoreTooltip({
   prs,
   commits,
   endorsements,
+  eloBonus,
   score,
   timeWindow,
 }: {
@@ -450,6 +452,7 @@ function ScoreTooltip({
   prs: number;
   commits: number;
   endorsements: number;
+  eloBonus: number;
   score: number;
   timeWindow: TimeWindow;
 }) {
@@ -483,13 +486,17 @@ function ScoreTooltip({
               <span className="text-pink-300">Endorsements ×{ENDORSEMENT_WEIGHT}</span>
               <span>{(endorsements * ENDORSEMENT_WEIGHT).toLocaleString()}</span>
             </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-orange-300">ELO ×{ELO_WEIGHT}</span>
+              <span>{eloBonus > 0 ? "+" : ""}{eloBonus.toLocaleString()}</span>
+            </div>
             <div className="border-t border-zinc-700 pt-1 flex justify-between gap-4 font-semibold">
               <span>Total</span>
               <span>{score.toLocaleString()}</span>
             </div>
             {timeWindow !== "all" && (
               <div className="text-[10px] text-zinc-500 pt-0.5">
-                Stars &amp; endorsements are always all-time
+                Stars, endorsements &amp; ELO are always all-time
               </div>
             )}
           </div>

@@ -2,6 +2,8 @@ export const STAR_WEIGHT = 10;
 export const PR_WEIGHT = 5;
 export const COMMIT_WEIGHT = 1;
 export const ENDORSEMENT_WEIGHT = 3;
+export const ELO_WEIGHT = 0.5;
+export const ELO_BASELINE = 1200;
 
 /**
  * Waterloo GitRank score formula: stars×10 + PRs×5 + commits×1.
