@@ -46,38 +46,48 @@ function PodiumCard({
           transition={{ duration: 0.5, delay, ease: "easeOut" }}
         >
           {/* Avatar with colored ring */}
-          <motion.div
-            className={`rounded-full p-[3px] ${style.card}`}
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{
-              delay: delay + 0.15,
-              type: "spring",
-              stiffness: 200,
-              damping: 18,
-            }}
+          <a
+            href={`https://github.com/${entry.username}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <img
-              src={`https://github.com/${entry.username}.png`}
-              alt={entry.username}
-              width={place === 1 ? 72 : 56}
-              height={place === 1 ? 72 : 56}
-              className="rounded-full border-2 border-white bg-white"
-            />
-          </motion.div>
+            <motion.div
+              className={`rounded-full p-[3px] ${style.card}`}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                delay: delay + 0.15,
+                type: "spring",
+                stiffness: 200,
+                damping: 18,
+              }}
+            >
+              <img
+                src={`https://github.com/${entry.username}.png`}
+                alt={entry.username}
+                width={place === 1 ? 72 : 56}
+                height={place === 1 ? 72 : 56}
+                className="rounded-full border-2 border-white bg-white"
+              />
+            </motion.div>
 
-          {/* Name & score */}
-          <div className="text-center min-w-0 max-w-[120px]">
-            <div className="font-bold text-sm truncate">
-              {`${entry.firstName ?? ""} ${entry.lastName ?? ""}`.trim() ||
-                entry.username}
-              {isCurrentUser && (
-                <span className="text-primary font-semibold"> (you)</span>
-              )}
-            </div>
+            {/* Name & score */}
+            <div className="text-center min-w-0 max-w-[120px]">
+              <div className="font-bold text-sm truncate hover:underline">
+                {`${entry.firstName ?? ""} ${entry.lastName ?? ""}`.trim() ||
+                  entry.username}
+                {isCurrentUser && (
+                  <span className="text-primary font-semibold"> (you)</span>
+                )}
+              </div>
             <div className="text-xs font-mono font-semibold mt-0.5 tabular-nums">
               {stats.score.toLocaleString()} pts
             </div>
+            </div>
+          </a>
+          <div className="text-center">
             <button
               onClick={(e) => {
                 e.stopPropagation();

@@ -319,7 +319,12 @@ export function LeaderboardTable({
                         <TableCell>
                           <Tooltip.Root>
                             <Tooltip.Trigger asChild>
-                              <div className="inline-flex items-start gap-3 group cursor-pointer">
+                              <a
+                                href={`https://github.com/${entry.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-start gap-3 group cursor-pointer"
+                              >
                                 <img
                                   src={`https://github.com/${entry.username}.png`}
                                   alt={entry.username}
@@ -328,7 +333,7 @@ export function LeaderboardTable({
                                   className="rounded-full border border-zinc-200 transition-opacity group-hover:opacity-80"
                                 />
                                 <span className="min-w-0">
-                                  <span className="block font-medium truncate">
+                                  <span className="block font-medium truncate group-hover:underline">
                                     {getDisplayName(entry)}
                                     {isCurrentUser && (
                                       <span className="text-primary font-semibold"> (you)</span>
@@ -341,7 +346,7 @@ export function LeaderboardTable({
                                 {entry.is_verified && (
                                   <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
                                 )}
-                              </div>
+                              </a>
                             </Tooltip.Trigger>
                             <Tooltip.Portal>
                               <Tooltip.Content

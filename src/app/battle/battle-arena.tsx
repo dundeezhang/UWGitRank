@@ -69,7 +69,9 @@ function UserCard({
         {/* User header */}
         <div className="flex items-center gap-3 mb-4">
           <a
-            href={`/profile/${user.username}`}
+            href={`https://github.com/${user.githubUsername ?? user.username}`}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity"
           >
