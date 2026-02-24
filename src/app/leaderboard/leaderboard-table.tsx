@@ -35,16 +35,12 @@ export type { LeaderboardEntry };
 const FACULTIES: Faculty[] = [
   "Engineering",
   "Math",
-  "Environment",
-  "Health",
   "Other",
 ];
 
 const FACULTY_LABELS: Record<Faculty, string> = {
-  Engineering: "Faculty of Engineering",
-  Math: "Faculty of Mathematics",
-  Environment: "Faculty of Environment",
-  Health: "Faculty of Health",
+  Engineering: "Engineering",
+  Math: "Mathematics",
   Other: "Other",
 };
 

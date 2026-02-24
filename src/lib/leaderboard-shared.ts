@@ -104,8 +104,6 @@ export const TIME_WINDOW_LABELS: Record<TimeWindow, string> = {
 export type Faculty =
   | "Engineering"
   | "Math"
-  | "Environment"
-  | "Health"
   | "Other";
 
   const FACULTY_MAP: Record<string, Faculty> = {
@@ -145,12 +143,5 @@ export function getFaculty(program: string | null): Faculty | null {
   if (FACULTY_MAP[program]) return FACULTY_MAP[program];
   const lower = program.toLowerCase();
   if (lower.includes("engineering")) return "Engineering";
-  if (
-    lower.includes("health") ||
-    lower.includes("kinesiology") ||
-    lower.includes("recreation") ||
-    lower.includes("public health")
-  )
-    return "Health";
   return "Other";
 }

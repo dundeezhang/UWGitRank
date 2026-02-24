@@ -120,6 +120,6 @@ The app is set up to run on **Vercel**. Configure the same env vars in the Verce
 
 ## Learn more
 
-- [How the ranking system works](/about) — In-app breakdown of the formula and metrics.
+- [About](/about) — Verify your @uwaterloo.ca email to join the rankings.
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Supabase](https://supabase.com/docs)
