@@ -219,7 +219,7 @@ async function finalizeVerifiedUser(user: {
     return { success: true as const }
 }
 
-export async function verifyStudentEmail(prevState: any, formData: FormData) {
+export async function verifyStudentEmail(_prevState: unknown, formData: FormData) {
     const email = formData.get('email') as string
 
     if (!email || !email.endsWith('@uwaterloo.ca')) {

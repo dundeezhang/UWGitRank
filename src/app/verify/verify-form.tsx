@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useRef } from 'react'
+import { useState, useEffect, useTransition, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { verifyStudentEmail, verifyOtpCode, resendVerificationCode } from '@/app/auth/actions'
 import { OtpInput } from '@/components/ui/otp-input'
@@ -42,17 +42,6 @@ export function VerifyForm() {
         }
     }, [])
 
-    // Auto-submit when all 6 digits are entered
-    useEffect(() => {
-        if (otpValue.length === 6 && step === 'otp_entry' && !isSubmitting && !hasAutoSubmitted.current) {
-            hasAutoSubmitted.current = true
-            handleOtpSubmit()
-        }
-        if (otpValue.length < 6) {
-            hasAutoSubmitted.current = false
-        }
-    }, [otpValue, step, isSubmitting])
-
     function handleEmailSubmit(formData: FormData) {
         setError(null)
         startTransition(async () => {
@@ -69,12 +58,12 @@ export function VerifyForm() {
         })
     }
 
-    function handleOtpSubmit() {
-        if (otpValue.length !== 6) return
+    const submitOtpCode = useCallback((code: string) => {
+        if (code.length !== 6) return
         setError(null)
         startTransition(async () => {
             try {
-                const result = await verifyOtpCode(email, otpValue)
+                const result = await verifyOtpCode(email, code)
 
                 if (result.error) {
                     setError(
@@ -92,7 +81,25 @@ export function VerifyForm() {
                 setOtpValue('')
             }
         })
-    }
+    }, [email, router, startTransition])
+
+    const handleOtpSubmit = useCallback(() => {
+        submitOtpCode(otpValue)
+    }, [otpValue, submitOtpCode])
+
+    const handleOtpChange = useCallback((value: string) => {
+        setOtpValue(value)
+
+        if (value.length < 6) {
+            hasAutoSubmitted.current = false
+            return
+        }
+
+        if (step === 'otp_entry' && !isSubmitting && !hasAutoSubmitted.current) {
+            hasAutoSubmitted.current = true
+            submitOtpCode(value)
+        }
+    }, [isSubmitting, step, submitOtpCode])
 
     function handleResend() {
         setError(null)
@@ -119,7 +126,7 @@ export function VerifyForm() {
 
                 <OtpInput
                     value={otpValue}
-                    onChange={setOtpValue}
+                    onChange={handleOtpChange}
                     disabled={isSubmitting}
                     error={!!error}
                     autoFocus

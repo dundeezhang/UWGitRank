@@ -18,6 +18,24 @@ export interface GitHubData {
   prs1y: number;
 }
 
+type AllTimeQueryData = {
+  user: {
+    contributionsCollection: { totalCommitContributions: number };
+    repositories: { nodes: Array<{ stargazerCount: number }> };
+    pullRequests: {
+      totalCount: number;
+      nodes: Array<{ mergedAt: string | null }>;
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  } | null;
+};
+
+type WindowedCommitsQueryData = {
+  user: {
+    contributionsCollection: { totalCommitContributions: number };
+  } | null;
+};
+
 // All-time query: stars, commits (default year), total merged PR count + paginated PR dates
 const allTimeQuery = `
 query($username: String!, $prCursor: String) {
@@ -63,7 +81,10 @@ function getToken(): string {
   return token;
 }
 
-async function graphql(queryStr: string, variables: Record<string, unknown>): Promise<any> {
+async function graphql<T>(
+  queryStr: string,
+  variables: Record<string, unknown>,
+): Promise<T> {
   const token = getToken();
 
   const res = await fetch(GITHUB_GRAPHQL_URL, {
@@ -79,12 +100,17 @@ async function graphql(queryStr: string, variables: Record<string, unknown>): Pr
     throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
   }
 
-  const json = await res.json();
+  const json: { data?: T; errors?: Array<{ message: string }> } =
+    await res.json();
 
   if (json.errors) {
     throw new Error(
       `GitHub GraphQL error: ${json.errors.map((e: { message: string }) => e.message).join(", ")}`
     );
+  }
+
+  if (!json.data) {
+    throw new Error("GitHub GraphQL error: Missing response data");
   }
 
   return json.data;
@@ -107,7 +133,7 @@ async function fetchAllTimeWithPRs(username: string): Promise<{
   const MAX_PR_PAGES = 5; // 5 pages × 100 = 500 PRs max
 
   for (let page = 0; page < MAX_PR_PAGES; page++) {
-    const data = await graphql(allTimeQuery, {
+    const data: AllTimeQueryData = await graphql(allTimeQuery, {
       username,
       prCursor,
     });
@@ -148,7 +174,11 @@ async function fetchWindowedCommits(
   from: string,
   to: string
 ): Promise<number> {
-  const data = await graphql(windowedCommitsQuery, { username, from, to });
+  const data: WindowedCommitsQueryData = await graphql(windowedCommitsQuery, {
+    username,
+    from,
+    to,
+  });
   const user = data.user;
   if (!user) {
     throw new Error(`GitHub user "${username}" not found`);

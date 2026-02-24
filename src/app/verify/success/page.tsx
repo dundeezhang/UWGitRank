@@ -102,7 +102,7 @@ export default async function VerificationSuccessPage() {
               Verification Successful
             </h1>
             <p className="text-muted-foreground mt-2">
-              You're now a verified member of the Waterloo GitRank community.
+              You&apos;re now a verified member of the Waterloo GitRank community.
             </p>
           </FadeIn>
         </div>
