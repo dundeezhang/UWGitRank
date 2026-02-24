@@ -26,7 +26,7 @@ type TopReposQueryData = {
 const topReposQuery = `
 query($username: String!) {
   user(login: $username) {
-    repositories(first: 5, ownerAffiliations: OWNER, isFork: false, orderBy: {field: STARGAZERS, direction: DESC}) {
+    repositories(first: 3, ownerAffiliations: OWNER, isFork: false, orderBy: {field: STARGAZERS, direction: DESC}) {
       nodes {
         name
         description

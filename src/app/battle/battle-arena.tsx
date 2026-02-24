@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { submitEloVote, type MatchupUser } from "@/app/auth/actions";
 import type { TopRepo } from "@/lib/github-repos";
 import { Button } from "@/components/ui/button";
-import { Star, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
+import { Star, RefreshCw, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface BattleUser extends MatchupUser {
@@ -68,21 +68,27 @@ function UserCard({
       >
         {/* User header */}
         <div className="flex items-center gap-3 mb-4">
-          {user.avatarUrl && (
-            <img
-              src={user.avatarUrl}
-              alt={user.username}
-              className="w-12 h-12 rounded-full border-2 border-zinc-200"
-            />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-zinc-900 truncate">
-              {user.firstName && user.lastName
-                ? `${user.firstName} ${user.lastName}`
-                : user.username}
+          <a
+            href={`/profile/${user.username}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+          >
+            {user.avatarUrl && (
+              <img
+                src={user.avatarUrl}
+                alt={user.username}
+                className="w-12 h-12 rounded-full border-2 border-zinc-200"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-zinc-900 truncate">
+                {user.firstName && user.lastName
+                  ? `${user.firstName} ${user.lastName}`
+                  : user.username}
+              </div>
+              <div className="text-sm text-zinc-500 truncate">@{user.username}</div>
             </div>
-            <div className="text-sm text-zinc-500 truncate">@{user.username}</div>
-          </div>
+          </a>
           <div className="text-right shrink-0">
             <div className="text-xs text-zinc-400 uppercase tracking-wide">ELO</div>
             <div className="font-bold text-lg text-zinc-900">
@@ -131,14 +137,19 @@ function UserCard({
             <p className="text-sm text-zinc-400 italic">No public repos</p>
           ) : (
             user.repos.map((repo) => (
-              <div
+              <a
                 key={repo.name}
-                className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-3"
+                href={repo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="block rounded-lg border border-zinc-100 bg-zinc-50/50 p-3 hover:border-zinc-300 hover:bg-zinc-100/70 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm text-zinc-900 truncate">
+                    <div className="font-medium text-sm text-zinc-900 truncate flex items-center gap-1.5">
                       {repo.name}
+                      <ExternalLink className="w-3 h-3 text-zinc-400 shrink-0" />
                     </div>
                     {repo.description && (
                       <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">
@@ -162,7 +173,7 @@ function UserCard({
                     </span>
                   </div>
                 )}
-              </div>
+              </a>
             ))
           )}
         </div>
