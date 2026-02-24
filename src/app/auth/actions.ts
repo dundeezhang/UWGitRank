@@ -105,6 +105,10 @@ function normalizeOtpSendError(message: string) {
         return 'Your session is invalid. Please sign out and log in with GitHub again.'
     }
     if (/only request this after/i.test(message) || /over_email_send_rate_limit/i.test(message)) {
+        const waitMatch = message.match(/after\s+(\d+)\s+seconds?/i)
+        if (waitMatch?.[1]) {
+            return `Please wait ${waitMatch[1]} seconds before requesting another code.`
+        }
         return 'Please wait 60 seconds before requesting another code.'
     }
     return message
@@ -278,14 +282,9 @@ export async function resendVerificationCode(email: string) {
         return { error: 'Your session is invalid. Please sign out and log in with GitHub again.' }
     }
 
-    const currentEmail = userData.user.email
-    if (!currentEmail) {
-        return { error: 'Your session email is missing. Please sign out and log in with GitHub again.' }
-    }
-
     const { data, error } = await supabase.auth.resend({
         type: 'email_change',
-        email: currentEmail,
+        email,
     })
     if (error) {
         console.error('[resendVerificationCode] resend error:', error)
@@ -293,7 +292,7 @@ export async function resendVerificationCode(email: string) {
     }
     console.log('[resendVerificationCode] resend success:', {
         userId: userData.user.id,
-        currentEmail,
+        currentEmail: userData.user.email ?? null,
         targetEmail: email,
         hasMessageId: Boolean((data as { message_id?: string } | null)?.message_id),
     })
