@@ -99,13 +99,6 @@ export async function updateSession(request: NextRequest) {
     );
     const isRegistered = hasSignupFields && isVerified;
 
-    if (!isRegistered && isLeaderboard) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      url.searchParams.set("auth_error", "signup_required");
-      return NextResponse.redirect(url);
-    }
-
     // If verified, redirect AWAY from /verify paths (except /verify/success)
     if (isRegistered && isVerifyPage && !isVerifySuccess) {
       const url = request.nextUrl.clone();
@@ -113,8 +106,8 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Users who have not completed signup+verification can only use landing/verify/about/auth paths.
-    if (!isRegistered && !isVerifyPage && !isLandingPage) {
+    // Users who have not completed signup+verification can only use landing/verify/leaderboard/about/auth paths.
+    if (!isRegistered && !isVerifyPage && !isLandingPage && !isLeaderboard) {
       const url = request.nextUrl.clone();
       url.pathname = "/verify";
       return NextResponse.redirect(url);

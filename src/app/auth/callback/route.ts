@@ -29,13 +29,6 @@ export async function GET(request: Request) {
                 const isVerified = Boolean(profile?.is_verified)
                 const isRegistered = hasSignupFields && isVerified
 
-                // Login path: only allow users with completed signup fields and verified profile.
-                if (next.startsWith('/leaderboard') && !isRegistered) {
-                    const redirectUrl = new URL(`${origin}/`)
-                    redirectUrl.searchParams.set('auth_error', 'signup_required')
-                    return NextResponse.redirect(redirectUrl.toString())
-                }
-
                 // Sign-up path: block users who are already verified from signing up again.
                 if (next.startsWith('/verify') && isVerified) {
                     const redirectUrl = new URL(`${origin}/`)
