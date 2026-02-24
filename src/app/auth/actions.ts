@@ -328,12 +328,25 @@ export async function verifyOtpCode(email: string, token: string) {
     await prisma.emailVerification.deleteMany({ where: { userId, email: targetEmail } })
 
     const admin = createAdminClient()
+
+    // The old Supabase updateUser flow may have created orphan auth entries for this
+    // email. Remove any existing user that holds the target email (but isn't us)
+    // so the update can proceed.
+    const { data: existingUsers } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const orphan = existingUsers?.users?.find(
+        (u) => u.email?.toLowerCase() === targetEmail && u.id !== userId
+    )
+    if (orphan) {
+        console.log('[verifyOtpCode] Removing orphan auth user holding target email:', orphan.id)
+        await admin.auth.admin.deleteUser(orphan.id)
+    }
+
     const { error: adminError } = await admin.auth.admin.updateUserById(userId, {
         email: targetEmail,
         email_confirm: true,
     })
     if (adminError) {
-        console.error('[verifyOtpCode] admin updateUser error:', adminError)
+        console.error('[verifyOtpCode] admin updateUser error:', adminError.message, adminError.status)
         return { error: 'Verification succeeded but failed to update your account. Please try again.' }
     }
 
