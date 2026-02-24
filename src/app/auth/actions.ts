@@ -107,6 +107,27 @@ function normalizeOtpSendError(message: string) {
     return message
 }
 
+async function ensurePendingEmailChange(supabase: Awaited<ReturnType<typeof createClient>>, targetEmail: string) {
+    const { data: userData, error } = await supabase.auth.getUser()
+    if (error) {
+        return { error: 'Could not confirm verification state. Please try again.' as const }
+    }
+
+    const user = userData.user
+    const pendingEmail = user?.new_email
+    const sentAt = user?.email_change_sent_at
+
+    // If this is missing, Supabase did not create a pending email change for OTP verification.
+    if (!pendingEmail || pendingEmail.toLowerCase() !== targetEmail.toLowerCase() || !sentAt) {
+        return {
+            error:
+                'Verification email is not being queued by Supabase. In Supabase Auth settings, enable email-change confirmation and ensure the Change Email template includes {{ .Token }}.',
+        }
+    }
+
+    return { success: true as const }
+}
+
 export async function verifyStudentEmail(prevState: any, formData: FormData) {
     const email = formData.get('email') as string
 
@@ -122,6 +143,12 @@ export async function verifyStudentEmail(prevState: any, formData: FormData) {
     if (error) {
         console.error('[verifyStudentEmail] updateUser error:', error)
         return { error: normalizeOtpSendError(error.message) }
+    }
+
+    const pendingCheck = await ensurePendingEmailChange(supabase, email)
+    if ('error' in pendingCheck) {
+        console.error('[verifyStudentEmail] pending email-change missing after updateUser for:', email)
+        return { error: pendingCheck.error }
     }
 
     console.log('[verifyStudentEmail] success, new email:', email)
@@ -140,6 +167,12 @@ export async function resendVerificationCode(email: string) {
     if (error) {
         console.error('[resendVerificationCode] updateUser error:', error)
         return { error: normalizeOtpSendError(error.message) }
+    }
+
+    const pendingCheck = await ensurePendingEmailChange(supabase, email)
+    if ('error' in pendingCheck) {
+        console.error('[resendVerificationCode] pending email-change missing after resend for:', email)
+        return { error: pendingCheck.error }
     }
 
     return { success: true, message: 'A new 6-digit code has been sent to your email.' }

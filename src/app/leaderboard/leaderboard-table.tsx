@@ -104,7 +104,7 @@ export function LeaderboardTable({
               <button
                 key={w}
                 onClick={() => setTimeWindow(w)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   timeWindow === w
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-zinc-200 text-muted-foreground hover:text-foreground"
@@ -123,7 +123,7 @@ export function LeaderboardTable({
               </span>
               <button
                 onClick={() => setFacultyFilter(null)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   facultyFilter === null
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-zinc-200 text-muted-foreground hover:text-foreground"
@@ -137,7 +137,7 @@ export function LeaderboardTable({
                   onClick={() =>
                     setFacultyFilter(facultyFilter === f ? null : f)
                   }
-                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                     facultyFilter === f
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-zinc-200 text-muted-foreground hover:text-foreground"
@@ -249,7 +249,7 @@ export function LeaderboardTable({
                                 href={`https://github.com/${entry.username}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="block text-xs text-muted-foreground transition-colors hover:text-yellow-600 hover:underline underline-offset-4"
+                                className="cursor-pointer block text-xs text-muted-foreground transition-colors hover:text-yellow-600 hover:underline underline-offset-4"
                               >
                                 @{entry.username}
                               </a>
@@ -258,7 +258,7 @@ export function LeaderboardTable({
                                   href={entry.linkedinUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="mt-1 hidden items-center gap-1 text-xs text-[#0A66C2] hover:underline group-hover:inline-flex"
+                                  className="cursor-pointer mt-1 hidden items-center gap-1 text-xs text-[#0A66C2] hover:underline group-hover:inline-flex"
                                 >
                                   <Linkedin className="h-3 w-3" />
                                   <span>LinkedIn</span>
@@ -313,7 +313,7 @@ function ScoreTooltip({
   return (
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
-        <span className="cursor-default font-mono font-semibold tabular-nums">
+        <span className="cursor-pointer font-mono font-semibold tabular-nums">
           {score.toLocaleString()}
         </span>
       </Tooltip.Trigger>

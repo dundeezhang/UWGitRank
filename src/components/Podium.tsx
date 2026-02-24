@@ -64,7 +64,7 @@ function PodiumCard({
         href={`https://github.com/${entry.username}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="block text-[10px] text-[#EAB308] hover:underline pt-1"
+        className="cursor-pointer block text-[10px] text-[#EAB308] hover:underline pt-1"
         onClick={(e) => e.stopPropagation()}
       >
         GitHub: @{entry.username}
@@ -74,7 +74,7 @@ function PodiumCard({
           href={entry.linkedinUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-[10px] text-[#0A66C2] hover:underline"
+          className="cursor-pointer block text-[10px] text-[#0A66C2] hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           LinkedIn profile →
