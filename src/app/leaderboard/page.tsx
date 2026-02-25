@@ -171,7 +171,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
                                 </Button>
                             </JoinLeaderboardDialog>
                         ) : null}
-                        {!user && (
+                        {user && (
                             <form action={signOut}>
                                 <button className="flex items-center cursor-pointer text-xs text-zinc-400 hover:text-zinc-900 underline underline-offset-4 transition-colors">
                                     <span className="hidden sm:inline">
