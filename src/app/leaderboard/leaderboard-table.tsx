@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition, useCallback } from "react";
+import { useState, useMemo, useTransition, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, BadgeCheck, Heart, Share2 } from "lucide-react";
 import { Tooltip } from "radix-ui";
@@ -57,11 +57,13 @@ export function LeaderboardTable({
   currentUserUsername,
   isVerified = false,
   endorsedUsernames = [],
+  highlightUsername,
 }: {
   data: LeaderboardEntry[];
   currentUserUsername?: string;
   isVerified?: boolean;
   endorsedUsernames?: string[];
+  highlightUsername?: string;
 }) {
   const [query, setQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState<Faculty | null>(null);
@@ -74,6 +76,19 @@ export function LeaderboardTable({
   );
   const [shareDialogEntry, setShareDialogEntry] = useState<{ entry: LeaderboardEntry; rank: number } | null>(null);
   const [, startTransition] = useTransition();
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+
+  // Scroll to highlighted user
+  useEffect(() => {
+    if (highlightUsername) {
+      const element = rowRefs.current.get(highlightUsername);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+      }
+    }
+  }, [highlightUsername]);
 
   const handleEndorse = useCallback(
     (username: string, currentCount: number) => {
@@ -292,6 +307,7 @@ export function LeaderboardTable({
                     const isCurrentUser =
                       currentUserUsername &&
                       entry.username === currentUserUsername;
+                    const isHighlighted = highlightUsername === entry.username;
                     const isEndorsed = endorsedSet.has(entry.username);
                     const canEndorse =
                       isVerified && !isCurrentUser && !!currentUserUsername;
@@ -299,6 +315,9 @@ export function LeaderboardTable({
                     return (
                       <motion.tr
                         key={entry.username}
+                        ref={(el: HTMLTableRowElement | null) => {
+                          if (el) rowRefs.current.set(entry.username, el);
+                        }}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
@@ -307,7 +326,9 @@ export function LeaderboardTable({
                           ease: "easeOut",
                         }}
                         className={`border-b border-zinc-200 transition-colors ${
-                          isCurrentUser
+                          isHighlighted
+                            ? "bg-[#EAB308]/10 hover:bg-[#EAB308]/15 ring-2 ring-[#EAB308]/50"
+                            : isCurrentUser
                             ? "bg-primary/10 hover:bg-primary/15 ring-1 ring-primary/30"
                             : "hover:bg-muted/30"
                         }`}

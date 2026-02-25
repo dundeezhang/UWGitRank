@@ -19,11 +19,12 @@ import { Github, Swords } from "lucide-react";
 import { VerificationSuccessBanner } from "./verification-success-banner";
 import { JoinLeaderboardDialog } from "@/components/JoinLeaderboardDialog";
 
-type PageProps = { searchParams: Promise<{ verified?: string; auth_error?: string }> };
+type PageProps = { searchParams: Promise<{ verified?: string; auth_error?: string; profile?: string }> };
 
 export default async function LeaderboardPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const showVerifiedSuccess = params.verified === "1";
+  const profileUsername = params.profile;
   const authErrorMessage =
     params.auth_error === "signup_required"
       ? "No account found. Please sign up first."
@@ -179,6 +180,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps) {
             }
             isVerified={isVerified}
             endorsedUsernames={endorsedUsernames}
+            highlightUsername={profileUsername}
           />
         </FadeIn>
       </main>
