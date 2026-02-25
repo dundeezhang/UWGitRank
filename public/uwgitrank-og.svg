@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;900&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- White background -->
+  <rect width="1200" height="630" fill="#ffffff"/>
+
+  <!-- Left gold accent bar -->
+  <rect x="0" y="0" width="10" height="630" fill="#FFCC00"/>
+
+  <!-- Wordmark -->
+  <text x="96" y="252" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="100" font-weight="900" fill="#111111" letter-spacing="-4">UW GitRank</text>
+
+  <!-- Gold underline -->
+  <rect x="96" y="268" width="660" height="5" fill="#FFCC00" rx="2.5"/>
+
+  <!-- Tagline -->
+  <text x="96" y="332" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="26" font-weight="400" fill="#666666">Waterloo student GitHub leaderboard</text>
+
+  <!-- Scoring chips -->
+  <rect x="96" y="370" width="100" height="32" rx="16" fill="#f2f2f2"/>
+  <text x="146" y="391" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="14" font-weight="500" fill="#333333" text-anchor="middle">stars</text>
+
+  <rect x="208" y="370" width="80" height="32" rx="16" fill="#f2f2f2"/>
+  <text x="248" y="391" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="14" font-weight="500" fill="#333333" text-anchor="middle">PRs</text>
+
+  <rect x="300" y="370" width="104" height="32" rx="16" fill="#f2f2f2"/>
+  <text x="352" y="391" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="14" font-weight="500" fill="#333333" text-anchor="middle">commits</text>
+
+  <rect x="416" y="370" width="144" height="32" rx="16" fill="#f2f2f2"/>
+  <text x="488" y="391" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="14" font-weight="500" fill="#333333" text-anchor="middle">endorsements</text>
+
+  <rect x="572" y="370" width="72" height="32" rx="16" fill="#f2f2f2"/>
+  <text x="608" y="391" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="14" font-weight="500" fill="#333333" text-anchor="middle">ELO</text>
+
+  <!-- Domain -->
+  <text x="96" y="484" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="18" font-weight="400" fill="#bbbbbb" letter-spacing="1">uwgitrank.com</text>
+
+  <!-- Right side rank block -->
+  <text x="980" y="270" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="140" font-weight="900" fill="#FFCC00" text-anchor="middle" letter-spacing="-6">#1</text>
+  <text x="980" y="390" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="84" font-weight="700" fill="#cccccc" text-anchor="middle" letter-spacing="-3">#2</text>
+  <text x="980" y="470" font-family="'Geist', 'Helvetica Neue', sans-serif" font-size="60" font-weight="600" fill="#d4a96a" text-anchor="middle" letter-spacing="-2">#3</text>
+
+</svg>
