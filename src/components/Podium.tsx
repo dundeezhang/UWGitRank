@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Share2, Swords } from "lucide-react";
 import { Tooltip } from "radix-ui";
 import type { RankedEntry, TimeWindow } from "@/lib/leaderboard-shared";
 import { getWindowStats } from "@/lib/leaderboard-shared";
@@ -23,6 +23,7 @@ function PodiumCard({
     canEndorse,
     onEndorse,
     onShare,
+    onBattleStats,
     isCurrentUser,
 }: {
     entry: RankedEntry;
@@ -32,6 +33,7 @@ function PodiumCard({
     canEndorse: boolean;
     onEndorse: () => void;
     onShare: () => void;
+    onBattleStats: () => void;
     isCurrentUser: boolean;
 }) {
     const style = PLACE_STYLES[place];
@@ -125,6 +127,18 @@ function PodiumCard({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                onBattleStats();
+                            }}
+                            className="mt-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/80 border border-zinc-200 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group"
+                            aria-label="View battle stats"
+                            title="Battle Stats"
+                        >
+                            <Swords className="h-2 w-2 text-zinc-500 group-hover:text-blue-600 transition-colors" />
+                        </button>
+
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 onShare();
                             }}
                             className="mt-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/80 border border-zinc-200 hover:border-[#EAB308] hover:bg-[#EAB308]/10 transition-all cursor-pointer group"
@@ -179,6 +193,7 @@ export function Podium({
     isVerified,
     onEndorse,
     onShare,
+    onBattleStats,
 }: {
     entries: RankedEntry[];
     timeWindow: TimeWindow;
@@ -187,6 +202,7 @@ export function Podium({
     isVerified: boolean;
     onEndorse: (username: string) => void;
     onShare: (entry: RankedEntry, rank: number) => void;
+    onBattleStats: (entry: RankedEntry) => void;
 }) {
     if (entries.length === 0) return null;
 
@@ -214,6 +230,7 @@ export function Podium({
                     timeWindow={timeWindow}
                     {...cardProps(second)}
                     onShare={() => onShare(second, 2)}
+                    onBattleStats={() => onBattleStats(second)}
                 />
             ) : (
                 <div className="w-24 sm:w-28" />
@@ -226,6 +243,7 @@ export function Podium({
                 timeWindow={timeWindow}
                 {...cardProps(first)}
                 onShare={() => onShare(first, 1)}
+                onBattleStats={() => onBattleStats(first)}
             />
 
             {/* 3rd place — right */}
@@ -236,6 +254,7 @@ export function Podium({
                     timeWindow={timeWindow}
                     {...cardProps(third)}
                     onShare={() => onShare(third, 3)}
+                    onBattleStats={() => onBattleStats(third)}
                 />
             ) : (
                 <div className="w-24 sm:w-28" />

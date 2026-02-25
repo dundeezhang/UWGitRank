@@ -29,6 +29,16 @@ interface BattleStats {
     maxEloLoss: number;
     matches: EloMatchRecord[];
     totalMatchCount: number;
+    hasMore?: boolean;
+}
+
+interface TimelineMatch {
+    id: string;
+    winnerId: string;
+    loserId: string;
+    winnerEloAfter: number;
+    loserEloAfter: number;
+    createdAt: string;
 }
 
 interface BattleProfileModalProps {
@@ -279,18 +289,22 @@ export function BattleProfileModal({
                                                     <BattleLogEntry
                                                         key={match.id}
                                                         match={match}
-                                                        username={entry.username}
+                                                        username={
+                                                            entry.username
+                                                        }
                                                     />
                                                 ))}
                                                 {stats.totalMatchCount >
                                                     stats.matches.length && (
                                                     <div className="text-center py-4 text-sm text-zinc-500 bg-zinc-50 rounded-lg border border-zinc-200">
                                                         Showing{" "}
-                                                        {stats.matches.length} of{" "}
+                                                        {stats.matches.length}{" "}
+                                                        of{" "}
                                                         {stats.totalMatchCount}{" "}
                                                         battles •{" "}
                                                         {stats.totalMatchCount -
-                                                            stats.matches.length}{" "}
+                                                            stats.matches
+                                                                .length}{" "}
                                                         more not shown
                                                     </div>
                                                 )}
@@ -355,7 +369,9 @@ function SimpleEloTimeline({
     const xScale = (index: number) =>
         marginLeft + (index / (points.length - 1 || 1)) * chartWidth;
     const yScale = (elo: number) =>
-        marginTop + chartHeight - ((elo - chartMinElo) / eloRange) * chartHeight;
+        marginTop +
+        chartHeight -
+        ((elo - chartMinElo) / eloRange) * chartHeight;
 
     // Generate path for the line
     const linePath = points
@@ -374,7 +390,7 @@ function SimpleEloTimeline({
 
     return (
         <div className="space-y-3">
-            <div className="bg-zinc-50 rounded-lg p-4 overflow-x-auto">
+            <div className="bg-zinc-50 rounded-lg p-2 overflow-x-auto">
                 <svg
                     width={width}
                     height={height}

@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useTransition, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, BadgeCheck, Heart, Share2 } from "lucide-react";
+import { Search, BadgeCheck, Heart, Share2, Swords } from "lucide-react";
 import { Tooltip } from "radix-ui";
 import { Input } from "@/components/ui/input";
 import { ShareProfileDialog } from "@/components/ShareProfileDialog";
+import { BattleProfileModal } from "@/components/BattleProfileModal";
 import {
   Table,
   TableBody,
@@ -75,6 +76,7 @@ export function LeaderboardTable({
     {},
   );
   const [shareDialogEntry, setShareDialogEntry] = useState<{ entry: LeaderboardEntry; rank: number } | null>(null);
+  const [battleProfileEntry, setBattleProfileEntry] = useState<LeaderboardEntry | null>(null);
   const [, startTransition] = useTransition();
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
@@ -263,6 +265,9 @@ export function LeaderboardTable({
               onShare={(entry, rank) => {
                 setShareDialogEntry({ entry, rank });
               }}
+              onBattleStats={(entry) => {
+                setBattleProfileEntry(entry);
+              }}
             />
           </motion.div>
         )}
@@ -325,7 +330,8 @@ export function LeaderboardTable({
                           delay: Math.min(i * 0.03, 0.45),
                           ease: "easeOut",
                         }}
-                        className={`border-b border-zinc-200 transition-colors ${
+                        onClick={() => setBattleProfileEntry(entry)}
+                        className={`border-b border-zinc-200 transition-colors cursor-pointer ${
                           isHighlighted
                             ? "bg-[#EAB308]/10 hover:bg-[#EAB308]/15 ring-2 ring-[#EAB308]/50"
                             : isCurrentUser
@@ -346,6 +352,7 @@ export function LeaderboardTable({
                                 href={`https://github.com/${entry.username}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
                                 className="inline-flex items-start gap-3 group cursor-pointer"
                               >
                                 <img
@@ -391,7 +398,7 @@ export function LeaderboardTable({
                           {entry.program ?? "—"}
                         </TableCell>
 
-                        <TableCell className="text-center">
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                           <EndorseButton
                             isEndorsed={isEndorsed}
                             count={entry.endorsement_count}
@@ -406,7 +413,20 @@ export function LeaderboardTable({
                         </TableCell>
 
                         <TableCell className="text-right font-mono text-sm tabular-nums text-zinc-500">
-                          {Math.round(entry.elo_rating)}
+                          <div className="flex items-center justify-end">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setBattleProfileEntry(entry);
+                              }}
+                              className="inline-flex items-center justify-center w-6 h-6 rounded-full hover:bg-blue-100/50 transition-colors group cursor-pointer"
+                              aria-label="View battle stats"
+                              title="View Battle Stats"
+                            >
+                              <Swords className="w-3.5 h-3.5 text-zinc-400 group-hover:text-blue-600 transition-colors" />
+                            </button>
+                            <span>{Math.round(entry.elo_rating)}</span>
+                          </div>
                         </TableCell>
 
                         <TableCell className="text-right">
@@ -423,9 +443,13 @@ export function LeaderboardTable({
 
                         <TableCell className="text-center">
                           <button
-                            onClick={() => setShareDialogEntry({ entry, rank: entry.rank })}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShareDialogEntry({ entry, rank: entry.rank });
+                            }}
                             className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[#EAB308]/10 transition-colors group cursor-pointer"
                             aria-label="Share profile"
+                            title="Share Profile"
                           >
                             <Share2 className="w-4 h-4 text-zinc-400 group-hover:text-[#EAB308] transition-colors" />
                           </button>
@@ -448,6 +472,15 @@ export function LeaderboardTable({
           entry={shareDialogEntry.entry}
           rank={shareDialogEntry.rank}
           timeWindow={timeWindow}
+        />
+      )}
+
+      {/* Battle Profile Modal */}
+      {battleProfileEntry && (
+        <BattleProfileModal
+          isOpen={true}
+          onClose={() => setBattleProfileEntry(null)}
+          entry={battleProfileEntry}
         />
       )}
     </Tooltip.Provider>
