@@ -9,8 +9,59 @@ import { syncSingleUser } from '@/lib/sync-user'
 import { refreshLeaderboard } from '@/lib/leaderboard'
 import { generateOtp, sendOtpEmail } from '@/lib/email'
 import { calculateElo } from '@/lib/elo'
+import { createHmac, randomBytes } from 'crypto'
 
 const SIGNUP_PENDING_COOKIE = 'signup_pending'
+const BATTLE_TOKEN_SECRET = process.env.BATTLE_TOKEN_SECRET || 'default-secret-change-in-production'
+const BATTLE_TOKEN_EXPIRY_MS = 5 * 60 * 1000 // 5 minutes max
+
+/**
+ * Generate a signed battle token for a specific matchup.
+ * Token format: base64(userAId:userBId:timestamp:nonce:signature)
+ */
+function generateBattleToken(userAId: string, userBId: string): string {
+    const timestamp = Date.now()
+    const nonce = randomBytes(8).toString('hex')
+    const payload = `${userAId}:${userBId}:${timestamp}:${nonce}`
+    const signature = createHmac('sha256', BATTLE_TOKEN_SECRET)
+        .update(payload)
+        .digest('hex')
+    return Buffer.from(`${payload}:${signature}`).toString('base64')
+}
+
+/**
+ * Verify and decode a battle token.
+ * Returns the userAId and userBId if valid, or null if invalid/expired.
+ */
+function verifyBattleToken(token: string): { userAId: string; userBId: string } | null {
+    try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8')
+        const parts = decoded.split(':')
+        if (parts.length !== 5) return null
+
+        const [userAId, userBId, timestampStr, nonce, signature] = parts
+        const timestamp = parseInt(timestampStr, 10)
+
+        // Check expiry
+        if (Date.now() - timestamp > BATTLE_TOKEN_EXPIRY_MS) {
+            return null
+        }
+
+        // Verify signature
+        const payload = `${userAId}:${userBId}:${timestamp}:${nonce}`
+        const expectedSignature = createHmac('sha256', BATTLE_TOKEN_SECRET)
+            .update(payload)
+            .digest('hex')
+
+        if (signature !== expectedSignature) {
+            return null
+        }
+
+        return { userAId, userBId }
+    } catch {
+        return null
+    }
+}
 
 async function getOrigin() {
     // Prefer an explicit env var so the URL is always the canonical domain.
@@ -457,8 +508,9 @@ export interface MatchupUser {
 /**
  * Get two random verified users for an ELO battle.
  * Excludes the current user from the matchup.
+ * Returns a signed token that's only valid for this specific matchup.
  */
-export async function getRandomMatchup(): Promise<{ users: [MatchupUser, MatchupUser] } | { error: string }> {
+export async function getRandomMatchup(): Promise<{ users: [MatchupUser, MatchupUser]; battleToken: string } | { error: string }> {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) {
@@ -490,14 +542,24 @@ export async function getRandomMatchup(): Promise<{ users: [MatchupUser, Matchup
         return { error: 'Not enough users to create a matchup.' }
     }
 
-    return { users: [rows[0], rows[1]] }
+    // Generate a signed token for this specific matchup
+    const battleToken = generateBattleToken(rows[0].id, rows[1].id)
+
+    // Store the token in the voter's profile
+    await prisma.profile.update({
+        where: { id: currentUserId },
+        data: { lastBattleToken: battleToken, lastBattleTokenUsedAt: null },
+    })
+
+    return { users: [rows[0], rows[1]], battleToken }
 }
 
 /**
  * Submit an ELO vote: the voter picks a winner from a matchup.
- * Updates both users' ELO ratings and records the match.
+ * Uses a signed battle token to prevent ID spoofing.
+ * Each token can only be used once.
  */
-export async function submitEloVote(winnerId: string, loserId: string) {
+export async function submitEloVote(battleToken: string, winnerChoice: 'A' | 'B') {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) {
@@ -506,14 +568,32 @@ export async function submitEloVote(winnerId: string, loserId: string) {
 
     const voterId = data.user.id
 
-    if (voterId === winnerId || voterId === loserId) {
-        return { error: 'You cannot vote in a matchup that includes yourself.' }
+    // Verify the battle token
+    const tokenData = verifyBattleToken(battleToken)
+    if (!tokenData) {
+        return { error: 'Invalid or expired battle token.' }
     }
 
-    if (winnerId === loserId) {
-        return { error: 'Invalid matchup.' }
+    // Check that the token matches the stored token and hasn't been used
+    const profile = await prisma.profile.findUnique({
+        where: { id: voterId },
+        select: { lastBattleToken: true, lastBattleTokenUsedAt: true },
+    })
+
+    if (!profile || profile.lastBattleToken !== battleToken) {
+        return { error: 'Battle token does not match or has expired.' }
     }
 
+    if (profile.lastBattleTokenUsedAt !== null) {
+        return { error: 'This battle token has already been used.' }
+    }
+
+    // Determine winner and loser based on choice
+    const { userAId, userBId } = tokenData
+    const winnerId = winnerChoice === 'A' ? userAId : userBId
+    const loserId = winnerChoice === 'A' ? userBId : userAId
+
+    // Fetch ELO ratings
     const [winnerMetrics, loserMetrics] = await Promise.all([
         prisma.githubMetrics.findUnique({ where: { userId: winnerId }, select: { eloRating: true } }),
         prisma.githubMetrics.findUnique({ where: { userId: loserId }, select: { eloRating: true } }),
@@ -527,6 +607,7 @@ export async function submitEloVote(winnerId: string, loserId: string) {
     const loserEloBefore = loserMetrics.eloRating
     const { newWinnerRating, newLoserRating } = calculateElo(winnerEloBefore, loserEloBefore)
 
+    // Update ELO ratings, record match, and mark token as used
     await Promise.all([
         prisma.githubMetrics.update({
             where: { userId: winnerId },
@@ -546,6 +627,10 @@ export async function submitEloVote(winnerId: string, loserId: string) {
                 winnerEloAfter: newWinnerRating,
                 loserEloAfter: newLoserRating,
             },
+        }),
+        prisma.profile.update({
+            where: { id: voterId },
+            data: { lastBattleTokenUsedAt: new Date() },
         }),
     ])
 

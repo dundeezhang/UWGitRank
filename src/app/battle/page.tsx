@@ -102,6 +102,7 @@ export default async function BattlePage() {
   }
 
   const [userA, userB] = matchup.users;
+  const battleToken = matchup.battleToken;
 
   let reposA: TopRepo[] = [];
   let reposB: TopRepo[] = [];
@@ -154,6 +155,7 @@ export default async function BattlePage() {
         <BattleArena
           userA={{ ...userA, repos: reposA }}
           userB={{ ...userB, repos: reposB }}
+          battleToken={battleToken}
         />
       </main>
     </div>

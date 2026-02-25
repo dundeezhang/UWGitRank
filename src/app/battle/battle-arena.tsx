@@ -15,6 +15,7 @@ interface BattleUser extends MatchupUser {
 interface BattleArenaProps {
   userA: BattleUser;
   userB: BattleUser;
+  battleToken: string;
 }
 
 interface VoteResult {
@@ -218,18 +219,18 @@ function UserCard({
   );
 }
 
-export function BattleArena({ userA, userB }: BattleArenaProps) {
+export function BattleArena({ userA, userB, battleToken }: BattleArenaProps) {
   const [result, setResult] = useState<VoteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  function handleVote(winnerId: string, loserId: string) {
+  function handleVote(choice: 'A' | 'B') {
     if (result || isPending) return;
     setError(null);
 
     startTransition(async () => {
-      const res = await submitEloVote(winnerId, loserId);
+      const res = await submitEloVote(battleToken, choice);
       if ("error" in res) {
         setError(res.error ?? "An error occurred");
         return;
@@ -249,7 +250,7 @@ export function BattleArena({ userA, userB }: BattleArenaProps) {
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-stretch">
         <UserCard
           user={userA}
-          onVote={() => handleVote(userA.id, userB.id)}
+          onVote={() => handleVote('A')}
           disabled={isPending || result !== null}
           result={result}
           side="left"
@@ -269,7 +270,7 @@ export function BattleArena({ userA, userB }: BattleArenaProps) {
 
         <UserCard
           user={userB}
-          onVote={() => handleVote(userB.id, userA.id)}
+          onVote={() => handleVote('B')}
           disabled={isPending || result !== null}
           result={result}
           side="right"

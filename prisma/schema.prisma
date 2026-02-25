@@ -22,6 +22,9 @@ model Profile {
   program         String?
   linkedinUrl     String? @map("linkedin_url")
 
+  lastBattleToken       String?   @map("last_battle_token")
+  lastBattleTokenUsedAt DateTime? @map("last_battle_token_used_at") @db.Timestamptz
+
   githubMetrics        GithubMetrics?
   endorsementsGiven    Endorsement[] @relation("EndorsementVoter")
   endorsementsReceived Endorsement[] @relation("EndorsementTarget")
