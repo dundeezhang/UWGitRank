@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendingUp, Swords, Trophy } from "lucide-react";
+import { X, TrendingUp, Swords, Trophy, Share2 } from "lucide-react";
 import type { LeaderboardEntry } from "@/app/leaderboard/leaderboard-table";
+import { ShareProfileDialog } from "@/components/ShareProfileDialog";
 
 interface EloMatchRecord {
     id: string;
@@ -60,6 +61,7 @@ export function BattleProfileModal({
     const [activeTab, setActiveTab] = useState<"stats" | "timeline" | "log">(
         "stats",
     );
+    const [showShareDialog, setShowShareDialog] = useState(false);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -144,27 +146,45 @@ export function BattleProfileModal({
                 >
                     {/* Header */}
                     <div className="bg-gradient-to-r from-[#EAB308] to-[#D9A307] p-6 text-white relative">
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                        <div className="absolute top-4 right-4 flex gap-2">
+                            <button
+                                onClick={() => setShowShareDialog(true)}
+                                className="p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                                aria-label="Share profile"
+                                title="Share Profile"
+                            >
+                                <Share2 className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
                         <div className="flex items-center gap-4">
-                            <img
-                                src={`https://github.com/${entry.username}.png`}
-                                alt={displayName}
-                                className="w-16 h-16 rounded-full border-4 border-white/20"
-                            />
-                            <div>
-                                <h2 className="text-2xl font-bold">
-                                    {displayName}
-                                </h2>
-                                <p className="text-white/90">
-                                    @{entry.username}
-                                </p>
-                            </div>
+                            <a
+                                href={`https://github.com/${entry.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-start gap-3 group cursor-pointer"
+                            >
+                                <img
+                                    src={`https://github.com/${entry.username}.png`}
+                                    alt={displayName}
+                                    className="w-16 h-16 rounded-full border-4 border-white/20"
+                                />
+                                <div>
+                                    <h2 className="text-2xl font-bold group-hover:underline">
+                                        {displayName}
+                                    </h2>
+                                    <p className="text-white/90">
+                                        @{entry.username}
+                                    </p>
+                                </div>
+                            </a>
                         </div>
                     </div>
 
@@ -304,8 +324,11 @@ export function BattleProfileModal({
                                 {activeTab === "timeline" && (
                                     <div className="space-y-4">
                                         <div className="text-sm text-zinc-600 mb-4">
-                                            ELO progression over time ({timelineMatches.length} battles
-                                            {timelineMatches.length > 100 && ' • showing 100 sampled points'})
+                                            ELO progression over time (
+                                            {timelineMatches.length} battles
+                                            {timelineMatches.length > 100 &&
+                                                " • showing 100 sampled points"}
+                                            )
                                         </div>
                                         <SimpleEloTimeline
                                             matches={timelineMatches}
@@ -334,7 +357,9 @@ export function BattleProfileModal({
                                                 ))}
                                                 {stats.hasMore && (
                                                     <button
-                                                        onClick={loadMoreMatches}
+                                                        onClick={
+                                                            loadMoreMatches
+                                                        }
                                                         disabled={loadingMore}
                                                         className="w-full py-3 text-sm font-medium text-[#EAB308] bg-[#EAB308]/5 hover:bg-[#EAB308]/10 rounded-lg border border-[#EAB308]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
@@ -360,6 +385,15 @@ export function BattleProfileModal({
                     </div>
                 </motion.div>
             </div>
+
+            {/* Share Dialog */}
+            <ShareProfileDialog
+                isOpen={showShareDialog}
+                onClose={() => setShowShareDialog(false)}
+                entry={entry}
+                rank={(entry as any).rank || 0}
+                timeWindow="all"
+            />
         </AnimatePresence>
     );
 }
@@ -396,7 +430,10 @@ function SimpleEloTimeline({
         }
 
         // Always include the last match to show current state
-        if (sampledMatches[sampledMatches.length - 1] !== reversedMatches[reversedMatches.length - 1]) {
+        if (
+            sampledMatches[sampledMatches.length - 1] !==
+            reversedMatches[reversedMatches.length - 1]
+        ) {
             sampledMatches.push(reversedMatches[reversedMatches.length - 1]);
         }
     }
@@ -604,15 +641,24 @@ function BattleLogEntry({
                     </div>
 
                     {opponent && (
-                        <div className="flex items-center gap-2 min-w-0">
-                            <img
-                                src={`https://github.com/${opponent.username}.png`}
-                                alt={opponent.username}
-                                className="w-6 h-6 rounded-full"
-                            />
-                            <span className="text-sm font-medium truncate">
-                                vs @{opponent.username}
-                            </span>
+                        <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-sm text-zinc-500">vs</span>
+                            <a
+                                href={`https://github.com/${opponent.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-1 group cursor-pointer"
+                            >
+                                <img
+                                    src={`https://github.com/${opponent.username}.png`}
+                                    alt={opponent.username}
+                                    className="w-6 h-6 rounded-full"
+                                />
+                                <span className="text-sm font-medium truncate group-hover:underline">
+                                    @{opponent.username}
+                                </span>
+                            </a>
                         </div>
                     )}
                 </div>
