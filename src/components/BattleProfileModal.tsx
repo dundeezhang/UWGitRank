@@ -53,7 +53,10 @@ export function BattleProfileModal({
     entry,
 }: BattleProfileModalProps) {
     const [stats, setStats] = useState<BattleStats | null>(null);
+    const [timelineMatches, setTimelineMatches] = useState<TimelineMatch[]>([]);
+    const [userId, setUserId] = useState<string>("");
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [activeTab, setActiveTab] = useState<"stats" | "timeline" | "log">(
         "stats",
     );
@@ -62,11 +65,19 @@ export function BattleProfileModal({
         if (!isOpen) return;
 
         setLoading(true);
-        // Fetch battle stats for this user
-        fetch(`/api/battle-stats?username=${entry.username}`)
-            .then((res) => res.json())
-            .then((data) => {
-                setStats(data);
+        // Fetch battle stats and battle log
+        Promise.all([
+            fetch(`/api/battle-stats?username=${entry.username}&limit=50`).then(
+                (res) => res.json(),
+            ),
+            fetch(
+                `/api/battle-stats?username=${entry.username}&timelineOnly=true`,
+            ).then((res) => res.json()),
+        ])
+            .then(([statsData, timelineData]) => {
+                setStats(statsData);
+                setTimelineMatches(timelineData.matches || []);
+                setUserId(timelineData.userId || "");
                 setLoading(false);
             })
             .catch((err) => {
@@ -74,6 +85,32 @@ export function BattleProfileModal({
                 setLoading(false);
             });
     }, [isOpen, entry.username]);
+
+    const loadMoreMatches = async () => {
+        if (!stats || loadingMore) return;
+
+        setLoadingMore(true);
+        try {
+            const res = await fetch(
+                `/api/battle-stats?username=${entry.username}&limit=50&offset=${stats.matches.length}`,
+            );
+            const data = await res.json();
+
+            setStats((prev) =>
+                prev
+                    ? {
+                          ...prev,
+                          matches: [...prev.matches, ...data.matches],
+                          hasMore: data.hasMore,
+                      }
+                    : null,
+            );
+        } catch (err) {
+            console.error("Failed to load more matches:", err);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -267,11 +304,12 @@ export function BattleProfileModal({
                                 {activeTab === "timeline" && (
                                     <div className="space-y-4">
                                         <div className="text-sm text-zinc-600 mb-4">
-                                            ELO progression over time
+                                            ELO progression over time ({timelineMatches.length} battles
+                                            {timelineMatches.length > 100 && ' • showing 100 sampled points'})
                                         </div>
                                         <SimpleEloTimeline
-                                            matches={stats.matches}
-                                            username={entry.username}
+                                            matches={timelineMatches}
+                                            userId={userId}
                                         />
                                     </div>
                                 )}
@@ -294,20 +332,25 @@ export function BattleProfileModal({
                                                         }
                                                     />
                                                 ))}
-                                                {stats.totalMatchCount >
-                                                    stats.matches.length && (
-                                                    <div className="text-center py-4 text-sm text-zinc-500 bg-zinc-50 rounded-lg border border-zinc-200">
-                                                        Showing{" "}
-                                                        {stats.matches.length}{" "}
-                                                        of{" "}
-                                                        {stats.totalMatchCount}{" "}
-                                                        battles •{" "}
-                                                        {stats.totalMatchCount -
-                                                            stats.matches
-                                                                .length}{" "}
-                                                        more not shown
-                                                    </div>
+                                                {stats.hasMore && (
+                                                    <button
+                                                        onClick={loadMoreMatches}
+                                                        disabled={loadingMore}
+                                                        className="w-full py-3 text-sm font-medium text-[#EAB308] bg-[#EAB308]/5 hover:bg-[#EAB308]/10 rounded-lg border border-[#EAB308]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {loadingMore
+                                                            ? "Loading..."
+                                                            : `Load More (${stats.totalMatchCount - stats.matches.length} remaining)`}
+                                                    </button>
                                                 )}
+                                                {!stats.hasMore &&
+                                                    stats.totalMatchCount >
+                                                        stats.matches
+                                                            .length && (
+                                                        <div className="text-center py-4 text-sm text-zinc-500 bg-zinc-50 rounded-lg border border-zinc-200">
+                                                            All battles loaded
+                                                        </div>
+                                                    )}
                                             </>
                                         )}
                                     </div>
@@ -323,10 +366,10 @@ export function BattleProfileModal({
 
 function SimpleEloTimeline({
     matches,
-    username,
+    userId,
 }: {
-    matches: EloMatchRecord[];
-    username: string;
+    matches: TimelineMatch[];
+    userId: string;
 }) {
     if (matches.length === 0) {
         return (
@@ -338,8 +381,28 @@ function SimpleEloTimeline({
 
     // Calculate ELO progression (reverse order for chronological)
     const reversedMatches = [...matches].reverse();
-    const points = reversedMatches.map((match) => {
-        const isWin = match.winner?.username === username;
+
+    // Downsample to max 100 points if needed
+    const MAX_POINTS = 100;
+    let sampledMatches = reversedMatches;
+
+    if (reversedMatches.length > MAX_POINTS) {
+        const step = reversedMatches.length / MAX_POINTS;
+        sampledMatches = [];
+
+        for (let i = 0; i < MAX_POINTS; i++) {
+            const index = Math.floor(i * step);
+            sampledMatches.push(reversedMatches[index]);
+        }
+
+        // Always include the last match to show current state
+        if (sampledMatches[sampledMatches.length - 1] !== reversedMatches[reversedMatches.length - 1]) {
+            sampledMatches.push(reversedMatches[reversedMatches.length - 1]);
+        }
+    }
+
+    const points = sampledMatches.map((match) => {
+        const isWin = match.winnerId === userId;
         const elo = isWin ? match.winnerEloAfter : match.loserEloAfter;
         return {
             elo,
@@ -487,8 +550,10 @@ function SimpleEloTimeline({
 
             <div className="flex items-center justify-between text-xs text-zinc-500">
                 <span>
-                    {points.length} battles • Range: {minElo.toFixed(0)} -{" "}
-                    {maxElo.toFixed(0)}
+                    {reversedMatches.length > MAX_POINTS
+                        ? `${points.length} points (from ${reversedMatches.length} battles)`
+                        : `${points.length} battles`}{" "}
+                    • Range: {minElo.toFixed(0)} - {maxElo.toFixed(0)}
                 </span>
                 <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
