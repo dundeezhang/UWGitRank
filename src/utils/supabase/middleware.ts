@@ -68,9 +68,10 @@ export async function updateSession(request: NextRequest) {
   const isLeaderboard = pathname === "/leaderboard";
   const isProfile = pathname.startsWith("/profile");
   const isAbout = pathname === "/about";
+  const isApiRoute = pathname.startsWith("/api/");
 
   // Public routes that don't need any auth check
-  if (isProfile || isAuthCallback || isAuthConfirm || isSignupPending || isAbout) {
+  if (isProfile || isAuthCallback || isAuthConfirm || isSignupPending || isAbout || isApiRoute) {
     return supabaseResponse;
   }
 
